@@ -122,6 +122,50 @@ def scrape_page(page, searched_email, csv_writer):
     print(f"  Scraped {scraped_count} rows from current page.")
     return scraped_count
 
+def ensure_100_rows_per_page(page):
+    try:
+        # 1. Try URL parameters first
+        current_url = page.url
+        if "perPage=100" not in current_url:
+            print("  Forcing 100 items per page by updating URL query parameters...")
+            if "?" in current_url:
+                if "perPage=" in current_url:
+                    target_url = re.sub(r"perPage=\d+", "perPage=100", current_url)
+                else:
+                    target_url = current_url + "&perPage=100"
+            else:
+                target_url = current_url + "?perPage=100"
+            page.goto(target_url)
+            page.wait_for_timeout(3000)
+            
+        # 2. Try native select dropdown if exists
+        selects_locator = page.locator("select")
+        select_count = selects_locator.count()
+        for idx in range(select_count):
+            sel = selects_locator.nth(idx)
+            if sel.is_visible():
+                options = sel.locator("option").all_text_contents()
+                if "100" in options or any("100" in opt for opt in options):
+                    sel.select_option("100")
+                    page.wait_for_timeout(2000)
+                    print("  Set page size to 100 via select dropdown.")
+                    return
+                    
+        # 3. Try custom Shadcn/Radix select dropdown button if exists
+        btn_10 = page.locator("button:has-text('10'), button:has-text('Tampilkan 10'), button:has-text('10 / page')").first
+        if btn_10.count() > 0 and btn_10.is_visible():
+            btn_10.click()
+            page.wait_for_timeout(1000)
+            opt_100 = page.locator("div[role='option']:has-text('100'), button[role='option']:has-text('100'), a:has-text('100')").first
+            if opt_100.count() > 0 and opt_100.is_visible():
+                opt_100.click()
+                page.wait_for_timeout(2000)
+                print("  Set page size to 100 via custom dropdown button.")
+                return
+            page.keyboard.press("Escape")
+    except Exception as e:
+        print(f"  Warning setting 100 rows per page: {e}")
+
 def run_scraper(use_test_emails=False):
     email_file = os.path.join("data", "email_mitra_test.txt" if use_test_emails else "email_mitra.txt")
     auth_file = "auth_state.json"
@@ -174,13 +218,15 @@ def run_scraper(use_test_emails=False):
             
     # Check if we should start fresh
     use_fresh = "--fresh" in sys.argv
-    resume_index = 0
+    completed_emails = []
+    failed_emails = []
     
     if not use_fresh and os.path.exists(checkpoint_file):
         try:
             with open(checkpoint_file, "r") as f:
                 cp = json.load(f)
-                last_email = cp.get("last_email")
+                completed_emails = cp.get("completed_emails", [])
+                failed_emails = cp.get("failed_emails", [])
                 cp_reverse = cp.get("reverse_order", None)
                 
                 # Check if the checkpoint's order is different from the current run's order
@@ -194,27 +240,24 @@ def run_scraper(use_test_emails=False):
                             print("Melanjutkan dari email terakhir...")
                         else:
                             use_fresh = True
+                            completed_emails = []
+                            failed_emails = []
                     except Exception:
                         use_fresh = True
+                        completed_emails = []
+                        failed_emails = []
                 
                 if not use_fresh:
-                    # Try to locate by email string instead of index
-                    if last_email and last_email in emails:
-                        resume_index = emails.index(last_email) + 1
-                        if resume_index < len(emails):
-                            print(f"Resuming from checkpoint: found last email '{last_email}' in the list. "
-                                  f"Starting at email #{resume_index + 1} ({emails[resume_index]})")
-                        else:
-                            resume_index = 0
-                            print(f"Checkpoint email '{last_email}' is the last item in the list. Starting fresh.")
-                    else:
-                        # Fallback to index if email is not found
-                        resume_index = cp.get("last_index", 0)
-                        if resume_index < len(emails):
-                            print(f"Resuming from checkpoint: starting at email #{resume_index + 1} ({emails[resume_index]})")
-                        else:
-                            resume_index = 0
-                            print("Checkpoint index exceeds email list length or email not found. Starting fresh.")
+                    # Backward compatibility for old checkpoint format
+                    if not completed_emails and "last_email" in cp:
+                        last_email = cp.get("last_email")
+                        if last_email and last_email in emails:
+                            last_idx = emails.index(last_email)
+                            completed_emails = emails[:last_idx + 1]
+                            print(f"Imported legacy checkpoint: starting after '{last_email}'")
+                    
+                    if completed_emails:
+                        print(f"Loaded checkpoint: {len(completed_emails)} emails already completed, {len(failed_emails)} previously failed.")
         except Exception as cp_err:
             print(f"Warning: Could not read checkpoint file: {cp_err}. Starting fresh.")
             
@@ -226,7 +269,8 @@ def run_scraper(use_test_emails=False):
         "Status", "Mode", "Petugas Saat Ini", "Keterangan"
     ]
     
-    if resume_index > 0 and os.path.exists(output_csv):
+    use_append = os.path.exists(output_csv) and (len(completed_emails) > 0)
+    if use_append:
         print(f"Appending new results to existing '{output_csv}'...")
         csv_file = open(output_csv, "a", newline="", encoding="utf-8")
         csv_writer = csv.writer(csv_file)
@@ -289,20 +333,8 @@ def run_scraper(use_test_emails=False):
         context.storage_state(path=auth_file)
         print(f"Session state saved to '{auth_file}'")
         
-        # Ensure we display 100 items per page (force URL parameter)
-        if "perPage=100" not in current_url:
-            print("Forcing 100 items per page by updating URL query parameters...")
-            if "?" in current_url:
-                if "perPage=" in current_url:
-                    target_url = re.sub(r"perPage=\d+", "perPage=100", current_url)
-                else:
-                    target_url = current_url + "&perPage=100"
-            else:
-                target_url = current_url + "?perPage=100"
-                
-            print(f"Redirecting to: {target_url}")
-            page.goto(target_url)
-            page.wait_for_url(target_pattern, timeout=10000)
+        # Ensure we display 100 items per page (force URL parameter and UI select)
+        ensure_100_rows_per_page(page)
             
         # Wait for table to load
         print("Waiting for table to load...")
@@ -316,11 +348,13 @@ def run_scraper(use_test_emails=False):
             return
             
         # Start search looping
-        for index in range(resume_index, len(emails)):
+        for index in range(len(emails)):
             email = emails[index]
+            if email in completed_emails:
+                continue
             print(f"[{index + 1}/{len(emails)}] Searching for: {email}")
             
-            attempts = 2
+            attempts = 5
             total_scraped = 0
             success = False
             
@@ -334,6 +368,7 @@ def run_scraper(use_test_emails=False):
                         print("  Search input not found! Reloading survey page...")
                         page.goto(page.url)
                         page.wait_for_selector("table", timeout=45000)
+                        ensure_100_rows_per_page(page)
                         search_input = page.locator('input[placeholder="Cari..."]')
                         
                     # Fill search box and press Enter
@@ -382,6 +417,8 @@ def run_scraper(use_test_emails=False):
                         
                         if is_genuine_no_data:
                             print(f"  Tabel menunjukkan secara valid bahwa tidak ada data untuk {email}.")
+                            success = True
+                            break
                         
                         if attempt < attempts:
                             print(f"  Mencoba kembali 1 kali lagi untuk memastikan...")
@@ -389,11 +426,12 @@ def run_scraper(use_test_emails=False):
                             try:
                                 page.goto(page.url)
                                 page.wait_for_selector("table", timeout=45000)
+                                ensure_100_rows_per_page(page)
                             except Exception:
                                 pass
                         else:
                             print(f"  Selesai mencari untuk {email} setelah {attempts} percobaan. Total scraped: {total_scraped} rows.")
-                            success = True
+                            success = False
                             
                 except Exception as e:
                     print(f"  Error processing email {email} (Percobaan {attempt}/{attempts}): {e}")
@@ -402,24 +440,46 @@ def run_scraper(use_test_emails=False):
                         try:
                             page.goto(page.url)
                             page.wait_for_selector("table", timeout=45000)
+                            ensure_100_rows_per_page(page)
                         except Exception:
                             pass
                     else:
                         print(f"  Gagal memproses email {email} setelah {attempts} percobaan.")
+                        success = False
+            
+            # Save checkpoint
+            if success:
+                completed_emails.append(email)
+                if email in failed_emails:
+                    failed_emails.remove(email)
+            else:
+                if email not in failed_emails:
+                    failed_emails.append(email)
                     
+            try:
+                with open(checkpoint_file, "w") as f:
+                    json.dump({
+                        "completed_emails": completed_emails,
+                        "failed_emails": failed_emails,
+                        "reverse_order": reverse_order
+                    }, f)
+            except Exception as e:
+                print(f"Warning saving checkpoint: {e}")
 
-                
         # Cleanup
         csv_file.close()
         browser.close()
         
         # Remove checkpoint on successful completion of all emails
-        if os.path.exists(checkpoint_file):
-            try:
-                os.remove(checkpoint_file)
-                print("Scraping completed successfully. Checkpoint file removed.")
-            except Exception as rm_err:
-                print(f"Warning: Could not remove checkpoint file: {rm_err}")
+        if len(failed_emails) == 0:
+            if os.path.exists(checkpoint_file):
+                try:
+                    os.remove(checkpoint_file)
+                    print("Scraping completed successfully. Checkpoint file removed.")
+                except Exception as rm_err:
+                    print(f"Warning: Could not remove checkpoint file: {rm_err}")
+        else:
+            print(f"Scraping completed with {len(failed_emails)} failed emails. Checkpoint retained.")
                 
         print(f"\nAll scraping completed successfully! Data saved in '{output_csv}'")
         

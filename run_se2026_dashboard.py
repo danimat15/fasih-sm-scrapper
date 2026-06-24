@@ -8,10 +8,18 @@ from patchright.sync_api import sync_playwright
 import process_data
 import random
 
+STEALTH_SPEED_UP = False
+if "--fast" in sys.argv:
+    STEALTH_SPEED_UP = True
+    print("Running in FAST mode (no stealth delays).")
+
 # Monkeypatch time.sleep to automatically add random delays (stealth)
 _original_sleep = time.sleep
 def _stealth_sleep(seconds):
-    _original_sleep(seconds * random.uniform(0.8, 1.5))
+    if STEALTH_SPEED_UP:
+        _original_sleep(seconds)
+    else:
+        _original_sleep(seconds * random.uniform(0.8, 1.5))
 time.sleep = _stealth_sleep
 
 def load_env(env_path=".env"):
@@ -40,6 +48,231 @@ def get_active_pagination(page):
         if loc.is_visible():
             return loc
     return page.locator("div:has-text('Menampilkan')").last
+
+def get_current_page_from_pagination(page):
+    try:
+        pag_el = get_active_pagination(page)
+        if not pag_el or pag_el.count() == 0:
+            return 1
+        text = pag_el.text_content().strip()
+        numbers = [int(s) for s in re.findall(r'\d+', text)]
+        if len(numbers) >= 2:
+            start_idx = numbers[0]
+            end_idx = numbers[1]
+            if start_idx == 1:
+                limit = end_idx
+            else:
+                diff = end_idx - start_idx + 1
+                if diff > 50:
+                    limit = 100
+                elif diff > 25:
+                    limit = 50
+                elif diff > 10:
+                    limit = 25
+                else:
+                    limit = 10
+            
+            if limit <= 0:
+                limit = 10
+            return (start_idx - 1) // limit + 1
+    except Exception as e:
+        print(f"  Warning parsing pagination text: {e}")
+    return 1
+
+def navigate_to_dashboard_page(page, target_page):
+    print(f"  Navigating to page {target_page}...")
+    
+    # Wait for target table cards to load
+    try:
+        page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first.wait_for(state="visible", timeout=30000)
+    except Exception:
+        pass
+        
+    current_page = get_current_page_from_pagination(page)
+    if current_page == target_page:
+        print(f"  Already at page {target_page}.")
+        return True
+        
+    # Try direct click if target page button is visible
+    target_btn = page.locator("a, button").filter(has_text=re.compile(f"^{target_page}$")).first
+    if target_btn.count() > 0 and target_btn.is_visible():
+        print(f"  Found Page {target_page} button directly, clicking...")
+        target_btn.click()
+        page.wait_for_timeout(3000)
+        current_page = get_current_page_from_pagination(page)
+        if current_page == target_page:
+            return True
+
+    # If we are past target page, reset to page 1 first
+    if current_page > target_page:
+        print(f"  Current page {current_page} is past target {target_page}. Resetting to page 1...")
+        page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
+        if page_one_btn.count() > 0 and page_one_btn.is_visible():
+            page_one_btn.click()
+            page.wait_for_timeout(3000)
+            current_page = get_current_page_from_pagination(page)
+            
+    # Click Next repeatedly
+    steps = 0
+    while current_page < target_page and steps < 100:
+        steps += 1
+        pagination_container = get_active_pagination(page)
+        if not pagination_container or pagination_container.count() == 0:
+            print("  Error: Pagination container not found during navigation.")
+            return False
+            
+        next_btn = pagination_container.locator("a:has-text('Next'), button:has-text('Next')").first
+        if next_btn.count() == 0 or not next_btn.is_visible():
+            print("  Error: Next button not found or not visible.")
+            return False
+            
+        # Get first email/text on page to detect transition
+        prev_first_email = ""
+        first_email_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
+        if first_email_el.count() > 0:
+            prev_first_email = first_email_el.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip()
+            
+        print(f"  Clicking Next to go from page {current_page} to {current_page + 1}...")
+        next_btn.click()
+        page.wait_for_timeout(1000)
+        
+        # Wait for page to change
+        start_wait = time.time()
+        page_changed = False
+        while time.time() - start_wait < 30.0:
+            page.wait_for_timeout(500)
+            cur_first_email_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
+            cur_first_email = cur_first_email_el.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip() if cur_first_email_el.count() > 0 else ""
+            if cur_first_email != prev_first_email and cur_first_email != "":
+                page_changed = True
+                break
+                
+        if not page_changed:
+            print("  Warning: Next page transition timed out.")
+            
+        current_page = get_current_page_from_pagination(page)
+        print(f"  Currently on page {current_page}")
+        
+    return current_page == target_page
+
+def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, new_data):
+    if not new_data:
+        return
+        
+    merged_data = {}
+    if os.path.exists(dashboard_csv):
+        try:
+            with open(dashboard_csv, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                header = next(reader, None)
+                if header:
+                    try:
+                        cat_idx = header.index("Category")
+                        email_idx = header.index("Email")
+                        sls_idx = header.index("SLS Code")
+                    except ValueError:
+                        cat_idx, email_idx, sls_idx = 0, 1, 2
+                    
+                    for row in reader:
+                        if not row or len(row) < 3:
+                            continue
+                        category = row[cat_idx].strip()
+                        email = row[email_idx].strip().lower()
+                        sls_code = row[sls_idx].strip()
+                        
+                        status_counts = {}
+                        for col in status_columns:
+                            try:
+                                col_idx = header.index(col)
+                                val = int(row[col_idx])
+                            except (ValueError, IndexError):
+                                val = 0
+                            status_counts[col] = val
+                        
+                        merged_data[(category, email, sls_code)] = status_counts
+        except Exception as e:
+            print(f"Warning: Could not read existing dashboard CSV for merging: {e}")
+
+    for key, val in new_data.items():
+        norm_key = (key[0], key[1].lower(), key[2])
+        merged_data[norm_key] = val
+
+    try:
+        with open(dashboard_csv, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(dashboard_headers)
+            for key, val in merged_data.items():
+                row = list(key) + [val[col] for col in status_columns]
+                writer.writerow(row)
+        print(f"  Successfully updated '{dashboard_csv}' with progress.")
+    except Exception as csv_err:
+        print(f"  Error writing dashboard CSV: {csv_err}")
+
+def navigate_to_rekap_petugas(page):
+    print("\nRefreshing session and navigating to Rekap Petugas...")
+    
+    # Reload page to refresh session
+    page.reload()
+    page.wait_for_timeout(4000)
+    
+    # Check if we got kicked out to BPS SSO login page
+    if "sso.bps.go.id" in page.url or page.locator("#username").count() > 0 or page.locator("text=Login SSO BPS").count() > 0:
+        print("Session expired on refresh. Re-logging in...")
+        env = load_env()
+        username = env.get("USERNAME")
+        password = env.get("PASSWORD")
+        
+        if page.locator("text=Login SSO BPS").count() > 0:
+            page.locator("text=Login SSO BPS").first.click()
+            page.wait_for_timeout(3000)
+            
+        if page.locator("#username").count() > 0:
+            page.locator("#username").fill(username)
+            page.locator("#password").fill(password)
+            page.locator("#kc-login").click()
+            page.wait_for_timeout(4000)
+            
+    # Make sure we reach the app workspace /app
+    try:
+        page.wait_for_url("**/app**", timeout=45000)
+    except Exception:
+        pass
+        
+    if not page.url.endswith("/app") and "/app/surveys" not in page.url:
+        page.goto("https://fasih-sm.bps.go.id/app")
+        page.wait_for_timeout(2000)
+        
+    # Search and select survey
+    search_input = page.locator('input[placeholder="Cari survei..."]')
+    search_input.wait_for(state="visible", timeout=30000)
+    search_input.fill("SENSUS EKONOMI 2026")
+    search_input.press("Enter")
+    page.wait_for_timeout(2500)
+    
+    # Click exact match
+    survey_items = page.locator("text=SENSUS EKONOMI 2026")
+    survey_items.first.wait_for(state="visible", timeout=30000)
+    survey_item = None
+    count = survey_items.count()
+    for idx in range(count):
+        item = survey_items.nth(idx)
+        if item.text_content().strip() == "SENSUS EKONOMI 2026":
+            survey_item = item
+            break
+    if survey_item is None:
+        survey_item = page.locator("text=SENSUS EKONOMI 2026").first
+    survey_item.click()
+    page.wait_for_timeout(3000)
+    
+    # Click PENDATAAN
+    pendataan_btn = page.locator("text=PENDATAAN").first
+    pendataan_btn.wait_for(state="visible", timeout=30000)
+    pendataan_btn.click()
+    page.wait_for_timeout(3000)
+    
+    # Click Rekap Petugas
+    page.locator("button:has-text('Rekap Petugas')").click()
+    page.wait_for_timeout(2000)
 
 def run_dashboard_scraper():
     auth_file = "auth_state.json"
@@ -92,7 +325,7 @@ def run_dashboard_scraper():
         page = context.new_page()
         # Monkeypatch page.wait_for_timeout to automatically add random delays (stealth)
         _original_wait = page.wait_for_timeout
-        page.wait_for_timeout = lambda timeout: _original_wait(timeout * random.uniform(0.8, 1.5))
+        page.wait_for_timeout = lambda timeout: _original_wait(timeout if STEALTH_SPEED_UP else (timeout * random.uniform(0.8, 1.5)))
         
         # Automated Login via SSO
         max_attempts = 5
@@ -267,7 +500,12 @@ def run_dashboard_scraper():
                 
         print("\n--- Phase 2: Scraping Rekap Petugas ---")
         page.locator("button:has-text('Rekap Petugas')").click()
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1500)
+        
+        global STEALTH_SPEED_UP
+        if "--fast" not in sys.argv:
+            STEALTH_SPEED_UP = True
+            print("Enabling speed-up mode for data scraping.")
         
         status_mapping = {
             "OPEN": "OPEN",
@@ -281,7 +519,32 @@ def run_dashboard_scraper():
         last_first_email = None
         last_pag_text = None
         
+        checkpoint_dashboard_file = "checkpoint_dashboard.json"
+        resume_category = None
+        resume_page = 1
+        
+        use_fresh = "--fresh" in sys.argv
+        if not use_fresh and os.path.exists(checkpoint_dashboard_file):
+            try:
+                with open(checkpoint_dashboard_file, "r") as f:
+                    cp = json.load(f)
+                    resume_category = cp.get("category")
+                    resume_page = cp.get("page_num", 1)
+                    print(f"Resuming dashboard scraping from checkpoint: Category '{resume_category}', Page {resume_page}")
+            except Exception as e:
+                print(f"Warning reading dashboard checkpoint: {e}. Starting fresh.")
+        
+        scraped_pengawas_this_run = False
         for category in ["Pengawas", "Pencacah"]:
+            if resume_category is not None:
+                if category != resume_category:
+                    print(f"Skipping Category: {category} (resuming further ahead)")
+                    continue
+                resume_category = None
+                start_page = resume_page
+            else:
+                start_page = 1
+                
             print(f"\nScraping Category: {category}")
             page.locator(f"button:has-text('{category}')").click()
             
@@ -290,7 +553,8 @@ def run_dashboard_scraper():
                 start_transition = time.time()
                 transitioned = False
                 while time.time() - start_transition < 30.0:
-                    page.wait_for_timeout(500)
+                    # Shorter transition polling wait (stealth)
+                    page.wait_for_timeout(random.randint(150, 300))
                     cur_first_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
                     cur_first = cur_first_el.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip() if cur_first_el.count() > 0 else ""
                     
@@ -311,16 +575,32 @@ def run_dashboard_scraper():
                 except Exception:
                     print("  Warning: Timeout waiting for initial cards to load.")
                     
-            page.wait_for_timeout(1000)
+            # Shorter random wait after tab loads (stealth)
+            page.wait_for_timeout(random.randint(300, 600))
             
-            page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
-            if page_one_btn.count() > 0 and page_one_btn.is_visible():
-                print("  Found Page 1 button, clicking to reset pagination...")
-                page_one_btn.click()
-                page.wait_for_timeout(2000)
+            if start_page > 1:
+                print(f"  Resuming at page {start_page}. Navigating to page...")
+                nav_success = navigate_to_dashboard_page(page, start_page)
+                if not nav_success:
+                    print(f"  Failed to navigate to page {start_page}. Starting from current page.")
+                page_num = start_page
+            else:
+                page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
+                if page_one_btn.count() > 0 and page_one_btn.is_visible():
+                    print("  Found Page 1 button, clicking to reset pagination...")
+                    page_one_btn.click()
+                    # Shorter random wait after resetting pagination (stealth)
+                    page.wait_for_timeout(random.randint(600, 1000))
+                page_num = 1
                 
-            page_num = 1
             while True:
+                # Save checkpoint
+                try:
+                    with open(checkpoint_dashboard_file, "w") as f:
+                        json.dump({"category": category, "page_num": page_num}, f)
+                except Exception as e:
+                    print(f"Warning saving checkpoint: {e}")
+
                 first_email_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
                 prev_first_email = None
                 if first_email_el.count() > 0:
@@ -380,11 +660,17 @@ def run_dashboard_scraper():
                                 if status_name in status_mapping:
                                     scraped_data_dict[key][status_mapping[status_name]] = int(count)
                                     
+                    # Collapse card and apply short random delay
                     card.click()
                     try:
-                        content_panel.wait_for(state="hidden", timeout=5000)
+                        content_panel.wait_for(state="hidden", timeout=1000)
                     except Exception:
                         pass
+                    page.wait_for_timeout(random.randint(100, 250))
+                
+                # Save progress after finishing this page
+                print(f"  [Page {page_num}] Saving/merging page results to CSV...")
+                save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, scraped_data_dict)
                         
                 pagination_container = get_active_pagination(page)
                 next_btn = None
@@ -419,7 +705,7 @@ def run_dashboard_scraper():
                     for attempt in range(3):
                         if attempt > 0:
                             print(f"  Retrying next page click (attempt {attempt+1}/3)...")
-                            page.wait_for_timeout(2000)
+                            page.wait_for_timeout(random.randint(600, 1000))
                         
                         try:
                             # Re-locate the pagination container and next button to avoid stale element reference
@@ -434,13 +720,12 @@ def run_dashboard_scraper():
                                 print("  Pagination container not found.")
                         except Exception as e:
                             print(f"  Click Next button failed or timed out: {e}")
-                            # Continue to next retry instead of breaking, giving it a chance to try again
                             continue
                         
                         start_time = time.time()
                         page_changed = False
                         while time.time() - start_time < 45.0:
-                            page.wait_for_timeout(500)
+                            page.wait_for_timeout(random.randint(150, 300))
                             current_first_email_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
                             current_first_email = ""
                             if current_first_email_el.count() > 0:
@@ -462,7 +747,7 @@ def run_dashboard_scraper():
                         break
                         
                     page_num += 1
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(random.randint(300, 600))
                 else:
                     print("  Reached last page of category.")
                     break
@@ -471,6 +756,17 @@ def run_dashboard_scraper():
             last_first_email = last_first_el.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip() if last_first_el.count() > 0 else ""
             last_pag_el = get_active_pagination(page)
             last_pag_text = last_pag_el.text_content().strip() if last_pag_el and last_pag_el.count() > 0 else ""
+            
+            if category == "Pengawas":
+                scraped_pengawas_this_run = True
+ 
+        # Remove checkpoint file on successful completion
+        if os.path.exists(checkpoint_dashboard_file):
+            try:
+                os.remove(checkpoint_dashboard_file)
+                print("All dashboard scraping completed. Checkpoint removed.")
+            except Exception as e:
+                print(f"Warning removing checkpoint: {e}")
  
         # Export dashboard CSV
         print(f"\nWriting dashboard data to '{dashboard_csv}'...")

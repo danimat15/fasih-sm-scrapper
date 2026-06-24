@@ -136,7 +136,8 @@ def main():
         # 2. Scrape Rekap Petugas (Pengawas & Pencacah)
         print("\n--- Phase 2: Scraping Rekap Petugas ---")
         page.locator("button:has-text('Rekap Petugas')").click()
-        page.wait_for_timeout(2000)
+        # Shorter, randomized wait (stealth)
+        page.wait_for_timeout(random.randint(500, 1000))
         
         status_mapping = {
             "OPEN": "OPEN",
@@ -160,7 +161,8 @@ def main():
                 start_transition = time.time()
                 transitioned = False
                 while time.time() - start_transition < 30.0:
-                    page.wait_for_timeout(500)
+                    # Shorter transition polling wait (stealth)
+                    page.wait_for_timeout(random.randint(150, 300))
                     cur_first_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
                     cur_first = cur_first_el.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip() if cur_first_el.count() > 0 else ""
                     
@@ -182,14 +184,16 @@ def main():
                 except Exception:
                     print("  Warning: Timeout waiting for initial cards to load.")
                     
-            page.wait_for_timeout(1000)
+            # Shorter random wait after tab loads (stealth)
+            page.wait_for_timeout(random.randint(300, 600))
             
             # Force reset pagination to page 1 by clicking the "1" button if available
             page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
             if page_one_btn.count() > 0 and page_one_btn.is_visible():
                 print("  Found Page 1 button, clicking to reset pagination...")
                 page_one_btn.click()
-                page.wait_for_timeout(2000)
+                # Shorter random wait after resetting pagination (stealth)
+                page.wait_for_timeout(random.randint(600, 1000))
                 
             page_num = 1
             while True:
@@ -258,12 +262,13 @@ def main():
                                 if status_name in status_mapping:
                                     scraped_data_dict[key][status_mapping[status_name]] = int(count)
                                     
-                    # Collapse card
+                    # Collapse card and apply short random delay
                     card.click()
                     try:
-                        content_panel.wait_for(state="hidden", timeout=5000)
+                        content_panel.wait_for(state="hidden", timeout=1000)
                     except Exception:
                         pass
+                    page.wait_for_timeout(random.randint(100, 250))
                         
                 # Pagination: Go to next page
                 pagination_container = get_active_pagination(page)
@@ -304,7 +309,7 @@ def main():
                     for attempt in range(3):
                         if attempt > 0:
                             print(f"  Retrying next page click (attempt {attempt+1}/3)...")
-                            page.wait_for_timeout(2000)
+                            page.wait_for_timeout(random.randint(600, 1000))
                         
                         try:
                             # Re-locate the pagination container and next button to avoid stale element reference
@@ -319,14 +324,13 @@ def main():
                                 print("  Pagination container not found.")
                         except Exception as e:
                             print(f"  Click Next button failed or timed out: {e}")
-                            # Continue to next retry instead of breaking, giving it a chance to try again
                             continue
                         
                         # Wait for page transition
                         start_time = time.time()
                         page_changed = False
                         while time.time() - start_time < 45.0:
-                            page.wait_for_timeout(500)
+                            page.wait_for_timeout(random.randint(150, 300))
                             
                             # Check first email
                             current_first_email_el = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first
@@ -351,7 +355,7 @@ def main():
                         break
                         
                     page_num += 1
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(random.randint(300, 600))
                 else:
                     print("  Reached the last page.")
                     break
