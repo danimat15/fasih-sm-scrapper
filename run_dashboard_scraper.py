@@ -4,6 +4,13 @@ import sys
 import time
 import re
 from patchright.sync_api import sync_playwright
+import random
+
+# Monkeypatch time.sleep to automatically add random delays (stealth)
+_original_sleep = time.sleep
+def _stealth_sleep(seconds):
+    _original_sleep(seconds * random.uniform(0.8, 1.5))
+time.sleep = _stealth_sleep
 
 def get_active_pagination(page):
     pag_locators = page.locator("div:has-text('Menampilkan')")
@@ -54,6 +61,9 @@ def main():
             context = browser.new_context()
             
         page = context.new_page()
+        # Monkeypatch page.wait_for_timeout to automatically add random delays (stealth)
+        _original_wait = page.wait_for_timeout
+        page.wait_for_timeout = lambda timeout: _original_wait(timeout * random.uniform(0.8, 1.5))
         
         # Open BPS FASIH Dashboard
         print(f"Navigating to dashboard page: {target_url}")

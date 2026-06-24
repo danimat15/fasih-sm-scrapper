@@ -6,6 +6,13 @@ import time
 import json
 from patchright.sync_api import sync_playwright
 import process_data
+import random
+
+# Monkeypatch time.sleep to automatically add random delays (stealth)
+_original_sleep = time.sleep
+def _stealth_sleep(seconds):
+    _original_sleep(seconds * random.uniform(0.8, 1.5))
+time.sleep = _stealth_sleep
 
 def load_env(env_path=".env"):
     env_vars = {}
@@ -227,6 +234,9 @@ def run_unified_scraper():
             context = browser.new_context()
             
         page = context.new_page()
+        # Monkeypatch page.wait_for_timeout to automatically add random delays (stealth)
+        _original_wait = page.wait_for_timeout
+        page.wait_for_timeout = lambda timeout: _original_wait(timeout * random.uniform(0.8, 1.5))
         
         # 2. Automated Login via SSO
         max_attempts = 5
