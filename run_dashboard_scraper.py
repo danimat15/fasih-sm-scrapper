@@ -3,7 +3,7 @@ import csv
 import sys
 import time
 import re
-from playwright.sync_api import sync_playwright
+from patchright.sync_api import sync_playwright
 
 def get_active_pagination(page):
     pag_locators = page.locator("div:has-text('Menampilkan')")

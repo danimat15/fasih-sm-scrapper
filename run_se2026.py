@@ -4,7 +4,7 @@ import csv
 import sys
 import time
 import json
-from playwright.sync_api import sync_playwright
+from patchright.sync_api import sync_playwright
 import process_data
 
 def load_env(env_path=".env"):
