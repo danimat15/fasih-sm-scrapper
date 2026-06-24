@@ -548,12 +548,23 @@ def run_unified_scraper():
                         for attempt in range(3):
                             if attempt > 0:
                                 print(f"  Retrying next page click (attempt {attempt+1}/3)...")
+                                page.wait_for_timeout(2000)
                             
                             try:
-                                next_btn.click(timeout=45000)
+                                # Re-locate the pagination container and next button to avoid stale element reference
+                                pagination_container = get_active_pagination(page)
+                                if pagination_container:
+                                    current_next_btn = pagination_container.locator("a:has-text('Next'), button:has-text('Next')").first
+                                    if current_next_btn.count() > 0 and current_next_btn.is_visible():
+                                        current_next_btn.click(timeout=20000)
+                                    else:
+                                        print("  Next button no longer found or not visible.")
+                                else:
+                                    print("  Pagination container not found.")
                             except Exception as e:
                                 print(f"  Click Next button failed or timed out: {e}")
-                                break
+                                # Continue to next retry instead of breaking, giving it a chance to try again
+                                continue
                             
                             start_time = time.time()
                             page_changed = False

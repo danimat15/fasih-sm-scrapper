@@ -290,18 +290,27 @@ def main():
                         is_disabled = True
                         
                 if next_btn and next_btn.count() > 0 and next_btn.is_visible() and not is_disabled and prev_first_email:
-                    # Click next with retry
                     clicked_ok = False
                     for attempt in range(3):
                         if attempt > 0:
                             print(f"  Retrying next page click (attempt {attempt+1}/3)...")
+                            page.wait_for_timeout(2000)
                         
                         try:
-                            # Use a longer timeout (45s) for slow page transitions
-                            next_btn.click(timeout=45000)
+                            # Re-locate the pagination container and next button to avoid stale element reference
+                            pagination_container = get_active_pagination(page)
+                            if pagination_container:
+                                current_next_btn = pagination_container.locator("a:has-text('Next'), button:has-text('Next')").first
+                                if current_next_btn.count() > 0 and current_next_btn.is_visible():
+                                    current_next_btn.click(timeout=20000)
+                                else:
+                                    print("  Next button no longer found or not visible.")
+                            else:
+                                print("  Pagination container not found.")
                         except Exception as e:
-                            print(f"  Click Next button failed or timed out (expected if disabled/last page): {e}")
-                            break
+                            print(f"  Click Next button failed or timed out: {e}")
+                            # Continue to next retry instead of breaking, giving it a chance to try again
+                            continue
                         
                         # Wait for page transition
                         start_time = time.time()
