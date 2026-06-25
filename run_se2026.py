@@ -12,6 +12,8 @@ STEALTH_SPEED_UP = "--fast" in sys.argv
 if STEALTH_SPEED_UP:
     print("Running in FAST mode (minimal delays).")
 
+SURVEY_ID = "a0429e96-51a5-477b-a415-485f9c153004"
+
 
 def load_env(env_path=".env"):
     env_vars = {}
@@ -356,6 +358,66 @@ def scrape_page(page, searched_email, csv_writer):
     return scraped_count
 
 
+def navigate_to_survey(page):
+    """
+    Navigate to the SE2026 survey and click PENDATAAN.
+    Skips the survey search if already on the survey page (URL contains SURVEY_ID).
+    """
+    if SURVEY_ID in page.url:
+        # Already inside the survey — only need to reach the PENDATAAN period
+        # Check if PENDATAAN button is visible; if so we're done
+        if page.locator("text=PENDATAAN").count() > 0:
+            print("  Already on survey page. Clicking PENDATAAN...")
+            pendataan_btn = page.locator("text=PENDATAAN").first
+            pendataan_btn.wait_for(state="visible", timeout=15000)
+            pendataan_btn.click()
+            page.wait_for_timeout(2000)
+            return
+        # Otherwise the survey period page is already loaded (URL has both IDs)
+        print("  Already on survey period page. Skipping survey search.")
+        return
+
+    # Not on survey page — go to /app and search
+    if not page.url.endswith("/app"):
+        page.goto("https://fasih-sm.bps.go.id/app")
+        page.wait_for_timeout(2000)
+
+    print("  Searching for 'SENSUS EKONOMI 2026'...")
+    search_input = page.locator('input[placeholder="Cari survei..."]')
+    search_input.wait_for(state="visible", timeout=30000)
+    search_input.fill("SENSUS EKONOMI 2026")
+    search_input.press("Enter")
+    page.wait_for_timeout(2500)
+
+    survey_items = page.locator("text=SENSUS EKONOMI 2026")
+    survey_items.first.wait_for(state="visible", timeout=30000)
+    survey_item = None
+    for idx in range(survey_items.count()):
+        item = survey_items.nth(idx)
+        if item.text_content().strip() == "SENSUS EKONOMI 2026":
+            survey_item = item
+            break
+    if survey_item is None:
+        try:
+            exact_loc = page.get_by_text("SENSUS EKONOMI 2026", exact=True).first
+            if exact_loc.count() > 0:
+                survey_item = exact_loc
+        except Exception:
+            pass
+    if survey_item is None:
+        survey_item = page.locator("text=SENSUS EKONOMI 2026").first
+
+    print(f"  Clicking survey: '{survey_item.text_content().strip()}'")
+    survey_item.click()
+    page.wait_for_timeout(3000)
+
+    print("  Navigating to PENDATAAN period...")
+    pendataan_btn = page.locator("text=PENDATAAN").first
+    pendataan_btn.wait_for(state="visible", timeout=30000)
+    pendataan_btn.click()
+    page.wait_for_timeout(3000)
+
+
 def navigate_to_rekap_petugas(page, env=None):
     print("\nRefreshing session and navigating to Rekap Petugas...")
     page.reload()
@@ -383,34 +445,7 @@ def navigate_to_rekap_petugas(page, env=None):
     except Exception:
         pass
 
-    if not page.url.endswith("/app") and "/app/surveys" not in page.url:
-        page.goto("https://fasih-sm.bps.go.id/app")
-        page.wait_for_timeout(2000)
-
-    search_input = page.locator('input[placeholder="Cari survei..."]')
-    search_input.wait_for(state="visible", timeout=30000)
-    search_input.fill("SENSUS EKONOMI 2026")
-    search_input.press("Enter")
-    page.wait_for_timeout(2500)
-
-    survey_items = page.locator("text=SENSUS EKONOMI 2026")
-    survey_items.first.wait_for(state="visible", timeout=30000)
-    survey_item = None
-    count = survey_items.count()
-    for idx in range(count):
-        item = survey_items.nth(idx)
-        if item.text_content().strip() == "SENSUS EKONOMI 2026":
-            survey_item = item
-            break
-    if survey_item is None:
-        survey_item = page.locator("text=SENSUS EKONOMI 2026").first
-    survey_item.click()
-    page.wait_for_timeout(3000)
-
-    pendataan_btn = page.locator("text=PENDATAAN").first
-    pendataan_btn.wait_for(state="visible", timeout=30000)
-    pendataan_btn.click()
-    page.wait_for_timeout(3000)
+    navigate_to_survey(page)
 
     page.locator("button:has-text('Rekap Petugas')").click()
     page.wait_for_timeout(2000)
@@ -668,50 +703,9 @@ def run_unified_scraper():
         context.storage_state(path=auth_file)
         print(f"Session state saved to '{auth_file}'")
 
-        # 3. Search and select survey
-        print("Searching for 'SENSUS EKONOMI 2026'...")
-        if not page.url.endswith("/app") and "/app/surveys" not in page.url:
-            page.goto("https://fasih-sm.bps.go.id/app")
-            page.wait_for_timeout(2000)
-
-        search_input = page.locator('input[placeholder="Cari survei..."]')
-        search_input.wait_for(state="visible", timeout=30000)
-        search_input.fill("SENSUS EKONOMI 2026")
-        search_input.press("Enter")
-        page.wait_for_timeout(2500)
-
-        print("Finding exact match for 'SENSUS EKONOMI 2026'...")
-        survey_items = page.locator("text=SENSUS EKONOMI 2026")
-        survey_items.first.wait_for(state="visible", timeout=30000)
-
-        survey_item = None
-        count = survey_items.count()
-        for idx in range(count):
-            item = survey_items.nth(idx)
-            if item.text_content().strip() == "SENSUS EKONOMI 2026":
-                survey_item = item
-                break
-
-        if survey_item is None:
-            try:
-                exact_loc = page.get_by_text("SENSUS EKONOMI 2026", exact=True).first
-                if exact_loc.count() > 0:
-                    survey_item = exact_loc
-            except Exception:
-                pass
-
-        if survey_item is None:
-            survey_item = page.locator("text=SENSUS EKONOMI 2026").first
-
-        print(f"Clicking survey item: '{survey_item.text_content().strip()}'")
-        survey_item.click()
-        page.wait_for_timeout(3000)
-
-        print("Navigating to PENDATAAN period...")
-        pendataan_btn = page.locator("text=PENDATAAN").first
-        pendataan_btn.wait_for(state="visible", timeout=30000)
-        pendataan_btn.click()
-        page.wait_for_timeout(3000)
+        # 3. Navigate to survey PENDATAAN
+        print("Navigating to SE2026 survey PENDATAAN...")
+        navigate_to_survey(page)
 
         # ---------------------------------------------------------------
         if run_mode in ["full", "dashboard"]:
