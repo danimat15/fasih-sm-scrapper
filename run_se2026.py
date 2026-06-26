@@ -7,6 +7,7 @@ import json
 from patchright.sync_api import sync_playwright
 import process_data
 import random
+import shutil
 
 STEALTH_SPEED_UP = "--fast" in sys.argv
 if STEALTH_SPEED_UP:
@@ -78,16 +79,18 @@ def wait_for_content_change(page, old_email, old_pag="", timeout=20.0):
     """Poll until the first card email or pagination text changes. Returns True on change."""
     start = time.time()
     while time.time() - start < timeout:
-        page.wait_for_timeout(200)
+        page.wait_for_timeout(300)
         if has_page_error(page):
             return False
         cur_email = get_first_email(page)
         if cur_email and cur_email != old_email:
+            wait_for_network_idle(page)
             return True
         if old_pag:
             cur_pag_el = get_active_pagination(page)
             cur_pag = cur_pag_el.text_content().strip() if cur_pag_el and cur_pag_el.count() > 0 else ""
             if cur_pag and cur_pag != old_pag:
+                wait_for_network_idle(page)
                 return True
     return False
 
@@ -117,6 +120,34 @@ def _delay(page, fast_ms, normal_ms_range):
         page.wait_for_timeout(fast_ms)
     else:
         page.wait_for_timeout(random.randint(*normal_ms_range))
+
+
+def wait_for_network_idle(page, timeout_ms=15000):
+    """Wait until the page has no pending network requests."""
+    try:
+        page.wait_for_load_state("networkidle", timeout=timeout_ms)
+    except Exception:
+        pass  # Continue even if timeout — some pages have persistent connections
+
+
+def health_check_dashboard(page):
+    """Verify the dashboard page is in a healthy state before scraping."""
+    if has_page_error(page):
+        return False
+    # Check that at least one card is visible
+    cards = page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)")
+    if cards.count() > 0:
+        return True
+    return False
+
+
+def exponential_backoff(page, attempt, base_ms=2000, max_ms=15000):
+    """Apply exponential backoff delay based on attempt number."""
+    delay = min(base_ms * (2 ** attempt), max_ms)
+    jitter = random.randint(0, delay // 4)
+    total = delay + jitter
+    print(f"  Backoff: waiting {total}ms (attempt {attempt + 1})...")
+    page.wait_for_timeout(total)
 
 
 def get_current_page_from_pagination(page):
@@ -191,57 +222,61 @@ def ensure_100_rows_per_page(page):
 
 
 def navigate_to_dashboard_page(page, target_page):
-    print(f"  Navigating to page {target_page}...")
+    """Navigate to target page by always starting from page 1 and clicking Next sequentially."""
+    print(f"  Navigating to page {target_page} (will click Next {target_page - 1} times)...")
+
+    # Wait for cards to be visible first
     try:
         page.locator("button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)").first.wait_for(state="visible", timeout=30000)
     except Exception:
         pass
 
-    current_page = get_current_page_from_pagination(page)
-    if current_page == target_page:
-        print(f"  Already at page {target_page}.")
+    if target_page <= 1:
+        print(f"  Target is page 1, no navigation needed.")
         return True
 
-    target_btn = page.locator("a, button").filter(has_text=re.compile(f"^{target_page}$")).first
-    if target_btn.count() > 0 and target_btn.is_visible():
-        print(f"  Found Page {target_page} button directly, clicking...")
-        target_btn.click()
-        page.wait_for_timeout(2000)
-        current_page = get_current_page_from_pagination(page)
-        if current_page == target_page:
-            return True
+    # Always start from page 1 for reliable sequential navigation
+    page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
+    if page_one_btn.count() > 0 and page_one_btn.is_visible():
+        prev_email = get_first_email(page)
+        page_one_btn.click()
+        wait_for_content_change(page, prev_email, timeout=30.0)
+        wait_for_network_idle(page)
+        _delay(page, 800, (1200, 2000))
+        print(f"  Reset to page 1.")
 
-    if current_page > target_page:
-        print(f"  Current page {current_page} is past target {target_page}. Resetting to page 1...")
-        page_one_btn = page.locator("a, button").filter(has_text=re.compile(r"^1$")).first
-        if page_one_btn.count() > 0 and page_one_btn.is_visible():
-            page_one_btn.click()
-            page.wait_for_timeout(2000)
-            current_page = get_current_page_from_pagination(page)
-
-    steps = 0
-    while current_page < target_page and steps < 100:
-        steps += 1
+    # Click Next (target_page - 1) times to reach target
+    for step in range(1, target_page):
         pagination_container = get_active_pagination(page)
         if not pagination_container or pagination_container.count() == 0:
-            print("  Error: Pagination container not found during navigation.")
+            print(f"  Error: Pagination container not found at step {step}.")
             return False
 
         next_btn = pagination_container.locator("a:has-text('Next'), button:has-text('Next')").first
         if next_btn.count() == 0 or not next_btn.is_visible():
-            print("  Error: Next button not found or not visible.")
+            print(f"  Error: Next button not found at step {step}.")
+            return False
+
+        if is_next_disabled(next_btn):
+            print(f"  Next button is disabled at step {step}. Reached last page (page {step}).")
             return False
 
         prev_email = get_first_email(page)
-        print(f"  Clicking Next: page {current_page} -> {current_page + 1}...")
+        print(f"  Clicking Next: step {step}/{target_page - 1} (page {step} -> {step + 1})...")
         next_btn.click()
 
-        wait_for_content_change(page, prev_email, timeout=20.0)
-        current_page = get_current_page_from_pagination(page)
-        print(f"  Currently on page {current_page}")
-        _delay(page, 300, (500, 800))
+        changed = wait_for_content_change(page, prev_email, timeout=30.0)
+        if not changed:
+            if has_page_error(page):
+                print(f"  Error overlay at step {step}.")
+                return False
+            print(f"  Warning: Content didn't change at step {step}, continuing...")
 
-    return current_page == target_page
+        wait_for_network_idle(page)
+        _delay(page, 800, (1200, 2000))
+
+    print(f"  Successfully navigated to page {target_page}.")
+    return True
 
 
 def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, new_data):
@@ -447,17 +482,53 @@ def navigate_to_rekap_petugas(page, env=None):
 
     navigate_to_survey(page)
 
-    page.locator("button:has-text('Rekap Petugas')").click()
-    page.wait_for_timeout(2000)
+    # Wait for Rekap Petugas button to appear
+    rekap_btn = page.locator("button:has-text('Rekap Petugas')")
+    try:
+        rekap_btn.first.wait_for(state="visible", timeout=30000)
+        rekap_btn.first.click()
+        print("  Clicked 'Rekap Petugas'.")
+    except Exception:
+        print("  Warning: Tombol 'Rekap Petugas' tidak ditemukan! Mencoba reload...")
+        page.reload()
+        page.wait_for_timeout(5000)
+        navigate_to_survey(page)
+        try:
+            rekap_btn = page.locator("button:has-text('Rekap Petugas')")
+            rekap_btn.first.wait_for(state="visible", timeout=30000)
+            rekap_btn.first.click()
+            print("  Clicked 'Rekap Petugas' (retry).")
+        except Exception as e2:
+            print(f"  ERROR: Tombol 'Rekap Petugas' tetap tidak ditemukan: {e2}")
+            return
+
+    # Wait for network idle + sub-menu buttons to appear
+    wait_for_network_idle(page)
+    page.wait_for_timeout(1500)
+
+    # Verify that Pengawas/Pencacah buttons are visible
+    try:
+        page.locator("button:has-text('Pengawas'), button:has-text('Pencacah')").first.wait_for(
+            state="visible", timeout=15000
+        )
+        print("  Sub-menu Pengawas/Pencacah ready.")
+    except Exception:
+        print("  Warning: Sub-menu buttons belum muncul, tapi melanjutkan...")
 
 
-def recover_to_category_page(page, context, auth_file, category, target_page, env):
+def recover_to_category_page(page, context, auth_file, category, target_page, env, attempt=0):
     """
     Recover from error overlay: reload, re-login if needed, navigate back to
-    the correct category and page number.
+    the correct category and page number. Uses exponential backoff on retries.
     """
     print(f"\n  !! ERROR DETECTED — Recovering to {category} page {target_page}...")
+
+    # Exponential backoff before recovery attempt
+    if attempt > 0:
+        exponential_backoff(page, attempt)
+
     navigate_to_rekap_petugas(page, env)
+    wait_for_network_idle(page)
 
     try:
         context.storage_state(path=auth_file)
@@ -465,9 +536,26 @@ def recover_to_category_page(page, context, auth_file, category, target_page, en
         pass
 
     before = get_first_email(page)
-    page.locator(f"button:has-text('{category}')").click()
+
+    # Wait for category button to appear before clicking
+    cat_btn = page.locator(f"button:has-text('{category}')")
+    try:
+        cat_btn.first.wait_for(state="visible", timeout=30000)
+        cat_btn.first.click()
+    except Exception as e:
+        print(f"  Recovery: Category button '{category}' not found ({e}). Retrying navigation...")
+        try:
+            navigate_to_rekap_petugas(page, env)
+            wait_for_network_idle(page)
+            cat_btn = page.locator(f"button:has-text('{category}')")
+            cat_btn.first.wait_for(state="visible", timeout=30000)
+            cat_btn.first.click()
+        except Exception as e2:
+            print(f"  Recovery: Second attempt also failed: {e2}")
+            return False
+
     if before:
-        wait_for_content_change(page, before, timeout=20.0)
+        wait_for_content_change(page, before, timeout=30.0)
     else:
         try:
             page.locator(
@@ -475,13 +563,19 @@ def recover_to_category_page(page, context, auth_file, category, target_page, en
             ).first.wait_for(state="visible", timeout=30000)
         except Exception:
             pass
-    page.wait_for_timeout(400)
+    wait_for_network_idle(page)
+    page.wait_for_timeout(800)
 
     if target_page > 1:
         ok = navigate_to_dashboard_page(page, target_page)
         if not ok:
             print(f"  Recovery: could not reach page {target_page}.")
             return False
+
+    # Final health check
+    if not health_check_dashboard(page):
+        print(f"  Recovery health check failed.")
+        return False
 
     print(f"  Recovery complete — on {category} page {target_page}.")
     return True
@@ -605,7 +699,15 @@ def run_unified_scraper():
         print("Launching Chromium browser in headed mode...")
         browser = p.chromium.launch(
             headless=False,
-            args=["--no-sandbox", "--disable-setuid-sandbox"],
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+                "--disable-ipc-flooding-protection",
+            ],
         )
 
         if os.path.exists(auth_file):
@@ -644,7 +746,12 @@ def run_unified_scraper():
                 print(f"Filling credentials for user: {username}...")
                 page.locator("#username").fill(username)
                 page.locator("#password").fill(password)
-                page.locator("#kc-login").click()
+                kc_login_btn = page.locator("#kc-login")
+                if kc_login_btn.count() > 0:
+                    kc_login_btn.click()
+                else:
+                    print("Warning: Tombol '#kc-login' tidak ditemukan! Mencoba submit via Enter...")
+                    page.locator("#password").press("Enter")
 
                 print("Waiting for login response...")
                 is_otp_page = False
@@ -676,7 +783,11 @@ def run_unified_scraper():
 
                     start_wait = time.time()
                     last_print = 0
+                    MAX_OTP_WAIT = 600  # 10 menit
                     while True:
+                        if time.time() - start_wait > MAX_OTP_WAIT:
+                            print("\nOTP timeout (10 menit)! Silakan jalankan ulang script.")
+                            sys.exit(1)
                         if "/app" in page.url:
                             print("Successfully logged in via OTP!")
                             break
@@ -733,7 +844,7 @@ def run_unified_scraper():
             # Phase 2: Scrape Rekap Petugas (Pengawas & Pencacah)
             print("\n--- Phase 2: Scraping Rekap Petugas ---")
             page.locator("button:has-text('Rekap Petugas')").click()
-            _delay(page, 800, (1200, 2000))
+            _delay(page, 1500, (2500, 4000))
 
             status_mapping = {
                 "OPEN": "OPEN",
@@ -776,7 +887,7 @@ def run_unified_scraper():
 
                 # Wait for tab content to change
                 if before_email:
-                    changed = wait_for_content_change(page, before_email, timeout=20.0)
+                    changed = wait_for_content_change(page, before_email, timeout=30.0)
                     if not changed:
                         if has_page_error(page):
                             ok = recover_to_category_page(page, context, auth_file, category, 1, env)
@@ -798,7 +909,7 @@ def run_unified_scraper():
                     except Exception:
                         print("  Warning: Timeout waiting for initial cards.")
 
-                _delay(page, 400, (600, 1000))
+                _delay(page, 1000, (1500, 2500))
 
                 if start_page > 1:
                     print(f"  Resuming at page {start_page}. Navigating...")
@@ -811,8 +922,11 @@ def run_unified_scraper():
                     if page_one_btn.count() > 0 and page_one_btn.is_visible():
                         print("  Resetting to page 1...")
                         page_one_btn.click()
-                        _delay(page, 500, (800, 1200))
+                        _delay(page, 1000, (1500, 2500))
                     page_num = 1
+
+                page_retry_count = 0
+                MAX_PAGE_RETRIES = 5
 
                 while True:
                     # Save checkpoint
@@ -822,20 +936,39 @@ def run_unified_scraper():
                     except Exception as e:
                         print(f"Warning saving checkpoint: {e}")
 
+                    # Wait for network idle before checking cards
+                    wait_for_network_idle(page)
+
                     # Ensure cards are visible
                     try:
                         page.locator(
                             "button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)"
-                        ).first.wait_for(state="visible", timeout=15000)
+                        ).first.wait_for(state="visible", timeout=30000)
                     except Exception:
                         if has_page_error(page):
-                            ok = recover_to_category_page(page, context, auth_file, category, page_num, env)
+                            page_retry_count += 1
+                            if page_retry_count > MAX_PAGE_RETRIES:
+                                print(f"  Recovery failed after {MAX_PAGE_RETRIES} retries. Stopping category.")
+                                break
+                            ok = recover_to_category_page(page, context, auth_file, category, page_num, env, attempt=page_retry_count)
                             if not ok:
                                 print("  Recovery failed. Stopping this category.")
                                 break
                             continue
                         print("  No cards visible. Breaking pagination.")
                         break
+
+                    # Health check before scraping
+                    if not health_check_dashboard(page):
+                        page_retry_count += 1
+                        if page_retry_count > MAX_PAGE_RETRIES:
+                            print(f"  Health check failed after {MAX_PAGE_RETRIES} retries. Stopping category.")
+                            break
+                        print(f"  Health check failed. Retrying page {page_num} ({page_retry_count}/{MAX_PAGE_RETRIES})...")
+                        ok = recover_to_category_page(page, context, auth_file, category, page_num, env, attempt=page_retry_count)
+                        if not ok:
+                            break
+                        continue
 
                     cards_locator = page.locator(
                         "button:has(div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm)"
@@ -871,12 +1004,13 @@ def run_unified_scraper():
 
                         if card.get_attribute("data-state") != "open":
                             card.click()
+                            wait_for_network_idle(page)
 
                         # Check for error overlay after expanding
-                        _delay(page, 200, (300, 500))
+                        _delay(page, 600, (1000, 1800))
                         if has_page_error(page):
                             print("      Error overlay after card expand. Recovering...")
-                            ok = recover_to_category_page(page, context, auth_file, category, page_num, env)
+                            ok = recover_to_category_page(page, context, auth_file, category, page_num, env, attempt=page_retry_count)
                             if not ok:
                                 page_error = True
                             break
@@ -885,16 +1019,19 @@ def run_unified_scraper():
                         try:
                             content_panel.locator(
                                 "div.f\\:group.f\\:flex.f\\:flex-col.f\\:gap-3"
-                            ).first.wait_for(state="visible", timeout=10000)
+                            ).first.wait_for(state="visible", timeout=20000)
                         except Exception:
                             if has_page_error(page):
                                 print("      Error overlay while loading SLS rows. Recovering...")
-                                ok = recover_to_category_page(page, context, auth_file, category, page_num, env)
+                                ok = recover_to_category_page(page, context, auth_file, category, page_num, env, attempt=page_retry_count)
                                 if not ok:
                                     page_error = True
                                 break
                             print("      Timeout waiting for SLS rows.")
                             continue
+
+                        # Wait for network idle after SLS rows are loaded
+                        wait_for_network_idle(page)
 
                         sls_rows = content_panel.locator(
                             "div.f\\:group.f\\:flex.f\\:flex-col.f\\:gap-3"
@@ -932,13 +1069,26 @@ def run_unified_scraper():
                         if card.get_attribute("data-state") == "open":
                             card.click()
                             try:
-                                content_panel.wait_for(state="hidden", timeout=2000)
+                                content_panel.wait_for(state="hidden", timeout=5000)
                             except Exception:
                                 pass
-                        _delay(page, 150, (300, 600))
+                        _delay(page, 600, (1000, 1800))
 
                     if page_error:
-                        break
+                        page_retry_count += 1
+                        if page_retry_count > MAX_PAGE_RETRIES:
+                            print(f"  Page {page_num} failed after {MAX_PAGE_RETRIES} retries. Stopping category.")
+                            break
+                        print(f"  Page {page_num} had errors. Retrying ({page_retry_count}/{MAX_PAGE_RETRIES})...")
+                        exponential_backoff(page, page_retry_count)
+                        ok = recover_to_category_page(page, context, auth_file, category, page_num, env, attempt=page_retry_count)
+                        if not ok:
+                            print("  Recovery failed. Stopping this category.")
+                            break
+                        continue
+
+                    # Page scraped successfully — reset retry counter
+                    page_retry_count = 0
 
                     # Save progress after finishing this page
                     print(f"  [Page {page_num}] Saving progress to CSV...")
@@ -960,10 +1110,10 @@ def run_unified_scraper():
                         and prev_email
                     ):
                         clicked_ok = False
-                        for attempt in range(3):
+                        for attempt in range(5):
                             if attempt > 0:
-                                print(f"  Retrying next page click (attempt {attempt+1}/3)...")
-                                _delay(page, 500, (600, 1000))
+                                print(f"  Retrying next page click (attempt {attempt+1}/5)...")
+                                _delay(page, 1000, (1500, 2500))
 
                             try:
                                 pagination_container = get_active_pagination(page)
@@ -983,13 +1133,13 @@ def run_unified_scraper():
                                 print(f"  Click Next failed: {e}")
                                 continue
 
-                            changed = wait_for_content_change(page, prev_email, prev_pag_text, timeout=20.0)
+                            changed = wait_for_content_change(page, prev_email, prev_pag_text, timeout=30.0)
                             if changed:
                                 clicked_ok = True
                                 break
                             if has_page_error(page):
                                 print("  Error overlay after pagination. Recovering...")
-                                ok = recover_to_category_page(page, context, auth_file, category, page_num + 1, env)
+                                ok = recover_to_category_page(page, context, auth_file, category, page_num + 1, env, attempt=page_retry_count)
                                 if ok:
                                     page_num += 1
                                     clicked_ok = True
@@ -1000,7 +1150,7 @@ def run_unified_scraper():
                             break
 
                         page_num += 1
-                        _delay(page, 400, (800, 1500))
+                        _delay(page, 1200, (2000, 3500))
                     else:
                         print("  Reached last page of category.")
                         break
@@ -1075,12 +1225,10 @@ def run_unified_scraper():
             # Intermediate processing and Git push
             print("\nProcessing intermediate dashboard data...")
             try:
-                import process_data
                 process_data.process_dashboard_scraped_data()
 
                 public_dir = os.path.join("dashboard", "public")
                 if os.path.exists(public_dir):
-                    import shutil
                     shutil.copy2(dashboard_csv, os.path.join(public_dir, "dashboard_scraped_data.csv"))
 
                     for src_name, dst_name in [
@@ -1284,7 +1432,6 @@ def run_unified_scraper():
         if run_mode in ["full", "data"]:
             print("\nRunning final data processing pipeline...")
             try:
-                import process_data
                 process_data.process_data()
             except Exception as proc_err:
                 print(f"Warning: Error during final data processing: {proc_err}")

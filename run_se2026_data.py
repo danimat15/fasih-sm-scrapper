@@ -318,7 +318,7 @@ def run_data_scraper():
         
         # Search and select survey
         print("Searching for 'SENSUS EKONOMI 2026'...")
-        if not page.url.endswith("/app") and "/app/surveys" not in page.url:
+        if "/app" not in page.url:
             page.goto("https://fasih-sm.bps.go.id/app")
             page.wait_for_timeout(2000)
             
