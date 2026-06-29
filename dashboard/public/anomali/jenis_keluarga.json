@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "title": "Status Perkawinan Kepala Keluarga dan Pasangan",
+    "description": "Kepala keluarga dan pasangannya berstatus cerai atau belum kawin."
+  },
+  {
+    "id": 2,
+    "title": "Kepala Keluarga Berusia < 10 Tahun di Rumah Milik Sendiri",
+    "description": "Umur kepala keluarga kurang dari 10 tahun, namun tinggal di rumah milik sendiri."
+  },
+  {
+    "id": 3,
+    "title": "Seluruh Anggota Keluarga Penyandang Disabilitas",
+    "description": "Seluruh anggota keluarga merupakan penyandang disabilitas, kecuali keluarga dengan satu anggota (keluarga tunggal)."
+  },
+  {
+    "id": 4,
+    "title": "Luas Lantai Per Kapita Ekstrem",
+    "description": "Luas lantai per kapita kurang dari 3 m² atau lebih dari 200 m²."
+  },
+  {
+    "id": 5,
+    "title": "Selisih Pendapatan Negatif",
+    "description": "Selisih antara pendapatan dan pengeluaran bernilai negatif."
+  },
+  {
+    "id": 6,
+    "title": "Penggunaan Listrik Rendah dengan Kepemilikan Barang Mewah",
+    "description": "Pengeluaran listrik per bulan kurang dari Rp100.000 atau daya listrik kurang dari 900 watt, namun rumah tangga memiliki lemari es/kulkas, AC, atau komputer/laptop/tablet."
+  },
+  {
+    "id": 7,
+    "title": "Jumlah Anggota Keluarga Ekstrem",
+    "description": "Jumlah anggota keluarga lebih dari 10 orang."
+  }
+]

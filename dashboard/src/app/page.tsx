@@ -923,6 +923,12 @@ export default function DashboardPage() {
               >
                 Comparison SBR
               </Link>
+              <Link 
+                href="/anomali" 
+                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
+              >
+                Anomali
+              </Link>
             </nav>
 
             <div className="flex items-center gap-2 shrink-0">

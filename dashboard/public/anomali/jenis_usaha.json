@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "title": "Dominasi Biaya Produksi",
+    "description": "Kegiatan usaha tidak memproduksi barang sendiri, namun biaya produksi mendominasi komposisi pengeluaran (lebih dari 50%)."
+  },
+  {
+    "id": 2,
+    "title": "Keuntungan Usaha",
+    "description": "Selisih antara pendapatan dan pengeluaran bernilai negatif (mengalami kerugian)."
+  },
+  {
+    "id": 3,
+    "title": "Penyertaan Modal Korporasi",
+    "description": "Terdapat anomali karena status badan usaha tercatat sebagai \"Bukan Badan Usaha\", namun memiliki penyertaan modal dari korporasi publik."
+  },
+  {
+    "id": 4,
+    "title": "Data Keuangan MBG",
+    "description": "Terdapat anomali pada data Makan Bergizi Gratis (MBG) berdasarkan rasio antara nilai pendapatan dan pengeluaran."
+  },
+  {
+    "id": 5,
+    "title": "Hubungan Aset, Pekerja, dan Produksi Usaha",
+    "description": "Terdapat anomali pada hubungan antara nilai aset, total nilai produksi/penjualan/pendapatan, dan jumlah pekerja."
+  },
+  {
+    "id": 6,
+    "title": "Penggunaan Internet pada Usaha Menengah dan Besar",
+    "description": "Pendapatan usaha menunjukkan skala usaha menengah atau besar, namun usaha tidak menggunakan internet."
+  },
+  {
+    "id": 7,
+    "title": "Kepemilikan Laporan Keuangan pada Usaha Menengah dan Besar",
+    "description": "Pendapatan usaha menunjukkan skala usaha menengah atau besar, namun usaha tidak memiliki laporan atau pencatatan keuangan."
+  },
+  {
+    "id": 8,
+    "title": "Perbedaan KBLI 2 Digit antara Hasil Pendataan dan SBR",
+    "description": "KBLI 2 digit hasil pendataan berbeda dengan KBLI 2 digit pada SBR. Perlu dilakukan verifikasi kesesuaian klasifikasi usaha serta pemetaan (mapping) kode KBLI apabila diperlukan."
+  }
+]
