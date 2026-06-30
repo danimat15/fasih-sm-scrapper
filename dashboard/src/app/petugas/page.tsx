@@ -288,11 +288,19 @@ export default function PetugasPage() {
 
   // Aggregate stats by officer
   const aggregatedStats = useMemo(() => {
-    const map: { [email: string]: OfficerStats } = {};
+    const map: { 
+      [email: string]: OfficerStats & { 
+        kecSet?: Set<string>; 
+        kosekaSet?: Set<string>; 
+      } 
+    } = {};
 
     rawData.forEach(record => {
       const email = record.email.toLowerCase().trim();
       if (!email) return;
+
+      const cleanedKec = record.namaKec ? formatKecName(record.namaKec) : "";
+      const cleanedKoseka = record.koseka && record.koseka !== "-" ? record.koseka.trim() : "";
 
       if (!map[email]) {
         map[email] = {
@@ -300,8 +308,8 @@ export default function PetugasPage() {
           email: record.email,
           category: record.category,
           jabatanPetugas: record.jabatanPetugas || (record.category === "Pengawas" ? "PML" : "PPL"),
-          namaKec: record.namaKec,
-          koseka: record.koseka || "-",
+          namaKec: "",
+          koseka: "",
           slsList: [],
           open: 0,
           draft: 0,
@@ -311,8 +319,17 @@ export default function PetugasPage() {
           revoked: 0,
           total: 0,
           progress: 0,
-          realisasi: 0
+          realisasi: 0,
+          kecSet: new Set<string>(),
+          kosekaSet: new Set<string>()
         };
+      }
+
+      if (cleanedKec && cleanedKec !== "-") {
+        map[email].kecSet?.add(cleanedKec);
+      }
+      if (cleanedKoseka && cleanedKoseka !== "-") {
+        map[email].kosekaSet?.add(cleanedKoseka);
       }
 
       // Add SLS info
@@ -352,7 +369,18 @@ export default function PetugasPage() {
       map[email].realisasi += slsRealisasi;
     });
 
-    return Object.values(map);
+    return Object.values(map).map(officer => {
+      const kecs = Array.from(officer.kecSet || []).sort();
+      officer.namaKec = kecs.length > 0 ? kecs.join(" & ") : "-";
+
+      const kosekas = Array.from(officer.kosekaSet || []).sort();
+      officer.koseka = kosekas.length > 0 ? kosekas.join(" & ") : "-";
+
+      delete officer.kecSet;
+      delete officer.kosekaSet;
+
+      return officer;
+    });
   }, [rawData]);
 
   // Aggregate stats by kecamatan (summing PML data)
@@ -622,8 +650,11 @@ export default function PetugasPage() {
       }
 
       // Subdistrict filter
-      if (selectedKec !== "all" && off.namaKec !== selectedKec) {
-        return false;
+      if (selectedKec !== "all") {
+        const targetKec = formatKecName(selectedKec).toLowerCase();
+        if (!off.namaKec.toLowerCase().includes(targetKec)) {
+          return false;
+        }
       }
 
       // Search query filter
