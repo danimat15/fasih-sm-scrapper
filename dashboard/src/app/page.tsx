@@ -123,12 +123,22 @@ const parseDashboardScrapedCSV = (csvText: string): DashboardRecord[] => {
   const idxCategory = headers.indexOf("category");
   const idxEmail = headers.indexOf("email");
   const idxSlsCode = headers.indexOf("sls code");
+  
   const idxOpen = headers.indexOf("open");
   const idxDraft = headers.indexOf("draft");
-  const idxSubmit = headers.findIndex(h => h.includes("submitted"));
-  const idxReject = headers.findIndex(h => h.includes("rejected"));
-  const idxApprove = headers.findIndex(h => h.includes("approved"));
-  const idxRevoked = headers.findIndex(h => h.includes("revoked"));
+  
+  const idxSubmit = headers.indexOf("submitted by pencacah");
+  const idxSubmitResp = headers.indexOf("submitted respondent");
+  
+  const idxReject = headers.indexOf("rejected by pengawas");
+  const idxRejectAdmin = headers.indexOf("rejected by admin kabupaten");
+  
+  const idxApprove = headers.indexOf("approved by pengawas");
+  const idxCompletedAdmin = headers.indexOf("completed by admin kabupaten");
+  const idxEditedAdmin = headers.indexOf("edited by admin kabupaten");
+  
+  const idxRevoked = headers.indexOf("revoked by pengawas");
+  
   const idxNamaPetugas = headers.indexOf("nama_petugas");
   const idxJabatanPetugas = headers.indexOf("jabatan_petugas");
   const idxNamaKec = headers.indexOf("nama_kec");
@@ -158,16 +168,31 @@ const parseDashboardScrapedCSV = (csvText: string): DashboardRecord[] => {
     row.push(entry);
 
     if (row.length >= 8) {
+      const openVal = idxOpen !== -1 ? parseInt(row[idxOpen]) || 0 : 0;
+      const draftVal = idxDraft !== -1 ? parseInt(row[idxDraft]) || 0 : 0;
+      
+      const submitVal = (idxSubmit !== -1 ? parseInt(row[idxSubmit]) || 0 : 0) +
+                        (idxSubmitResp !== -1 ? parseInt(row[idxSubmitResp]) || 0 : 0);
+                        
+      const rejectVal = (idxReject !== -1 ? parseInt(row[idxReject]) || 0 : 0) +
+                        (idxRejectAdmin !== -1 ? parseInt(row[idxRejectAdmin]) || 0 : 0);
+                        
+      const approveVal = (idxApprove !== -1 ? parseInt(row[idxApprove]) || 0 : 0) +
+                         (idxCompletedAdmin !== -1 ? parseInt(row[idxCompletedAdmin]) || 0 : 0) +
+                         (idxEditedAdmin !== -1 ? parseInt(row[idxEditedAdmin]) || 0 : 0);
+                         
+      const revokedVal = idxRevoked !== -1 ? parseInt(row[idxRevoked]) || 0 : 0;
+
       parsed.push({
         category: idxCategory !== -1 && row[idxCategory] ? row[idxCategory].replace(/"/g, "").trim() : "",
         email: idxEmail !== -1 && row[idxEmail] ? row[idxEmail].replace(/"/g, "").trim() : "",
         slsCode: idxSlsCode !== -1 && row[idxSlsCode] ? row[idxSlsCode].replace(/"/g, "").trim() : "",
-        open: idxOpen !== -1 ? parseInt(row[idxOpen]) || 0 : 0,
-        draft: idxDraft !== -1 ? parseInt(row[idxDraft]) || 0 : 0,
-        submit: idxSubmit !== -1 ? parseInt(row[idxSubmit]) || 0 : 0,
-        reject: idxReject !== -1 ? parseInt(row[idxReject]) || 0 : 0,
-        approve: idxApprove !== -1 ? parseInt(row[idxApprove]) || 0 : 0,
-        revoked: idxRevoked !== -1 ? parseInt(row[idxRevoked]) || 0 : 0,
+        open: openVal,
+        draft: draftVal,
+        submit: submitVal,
+        reject: rejectVal,
+        approve: approveVal,
+        revoked: revokedVal,
         namaPetugas: idxNamaPetugas !== -1 && row[idxNamaPetugas] ? row[idxNamaPetugas].replace(/"/g, "").trim() : "",
         jabatanPetugas: idxJabatanPetugas !== -1 && row[idxJabatanPetugas] ? row[idxJabatanPetugas].replace(/"/g, "").trim() : "",
         namaKec: idxNamaKec !== -1 && row[idxNamaKec] ? row[idxNamaKec].replace(/"/g, "").trim() : "",
@@ -229,7 +254,8 @@ export default function DashboardPage() {
     submit: 0,
     approve: 0,
     draft: 0,
-    reject: 0
+    reject: 0,
+    revoked: 0
   });
 
   // Filter & Search states
@@ -311,27 +337,47 @@ export default function DashboardPage() {
           const progresText = await progresResponse.text();
           const progresLines = progresText.split("\n").map(l => l.trim()).filter(Boolean);
           if (progresLines.length > 1) {
-            const headers = progresLines[0].split(",");
+            const headers = progresLines[0].split(",").map(h => h.trim().toUpperCase());
             const values = progresLines[1].split(",");
-            const openIdx = headers.indexOf("OPEN");
-            const submitIdx = headers.indexOf("SUBMITTED BY Pencacah");
-            const draftIdx = headers.indexOf("DRAFT");
-            const rejectIdx = headers.indexOf("REJECTED BY Pengawas");
-            const approveIdx = headers.indexOf("APPROVED BY Pengawas");
             
-            let openVal = 0, submitVal = 0, draftVal = 0, rejectVal = 0, approveVal = 0;
+            const openIdx = headers.indexOf("OPEN");
+            const draftIdx = headers.indexOf("DRAFT");
+            
+            const submitIdx = headers.indexOf("SUBMITTED BY PENCACAH");
+            const submitRespIdx = headers.indexOf("SUBMITTED RESPONDENT");
+            
+            const rejectIdx = headers.indexOf("REJECTED BY PENGAWAS");
+            const rejectAdminIdx = headers.indexOf("REJECTED BY ADMIN KABUPATEN");
+            
+            const approveIdx = headers.indexOf("APPROVED BY PENGAWAS");
+            const completedAdminIdx = headers.indexOf("COMPLETED BY ADMIN KABUPATEN");
+            const editedAdminIdx = headers.indexOf("EDITED BY ADMIN KABUPATEN");
+            
+            const revokedIdx = headers.indexOf("REVOKED BY PENGAWAS");
+            
+            let openVal = 0, submitVal = 0, draftVal = 0, rejectVal = 0, approveVal = 0, revokedVal = 0;
             if (openIdx !== -1) openVal = parseInt(values[openIdx]) || 0;
-            if (submitIdx !== -1) submitVal = parseInt(values[submitIdx]) || 0;
             if (draftIdx !== -1) draftVal = parseInt(values[draftIdx]) || 0;
-            if (rejectIdx !== -1) rejectVal = parseInt(values[rejectIdx]) || 0;
-            if (approveIdx !== -1) approveVal = parseInt(values[approveIdx]) || 0;
+            
+            if (submitIdx !== -1) submitVal += parseInt(values[submitIdx]) || 0;
+            if (submitRespIdx !== -1) submitVal += parseInt(values[submitRespIdx]) || 0;
+            
+            if (rejectIdx !== -1) rejectVal += parseInt(values[rejectIdx]) || 0;
+            if (rejectAdminIdx !== -1) rejectVal += parseInt(values[rejectAdminIdx]) || 0;
+            
+            if (approveIdx !== -1) approveVal += parseInt(values[approveIdx]) || 0;
+            if (completedAdminIdx !== -1) approveVal += parseInt(values[completedAdminIdx]) || 0;
+            if (editedAdminIdx !== -1) approveVal += parseInt(values[editedAdminIdx]) || 0;
+            
+            if (revokedIdx !== -1) revokedVal = parseInt(values[revokedIdx]) || 0;
             
             setSummaryStatusCounts({
               open: openVal,
               submit: submitVal,
               draft: draftVal,
               reject: rejectVal,
-              approve: approveVal
+              approve: approveVal,
+              revoked: revokedVal
             });
           }
         }
@@ -459,6 +505,7 @@ export default function DashboardPage() {
     let submitCount = 0;
     let rejectCount = 0;
     let approvedCount = 0;
+    let revokedCount = 0;
     let emptyCount = 0;
 
     rawData.forEach(r => {
@@ -467,18 +514,20 @@ export default function DashboardPage() {
         openCount++;
       } else if (s === "draft") {
         draftCount++;
-      } else if (s === "submitted by pencacah" || s === "submit" || s === "submitted") {
+      } else if (s === "submitted by pencacah" || s === "submit" || s === "submitted" || s === "submitted respondent") {
         submitCount++;
-      } else if (s === "rejected by pengawas" || s === "reject" || s === "rejected") {
+      } else if (s === "rejected by pengawas" || s === "reject" || s === "rejected" || s === "rejected by admin kabupaten") {
         rejectCount++;
-      } else if (s === "approved by pengawas" || s === "approve" || s === "approved") {
+      } else if (s === "approved by pengawas" || s === "approve" || s === "approved" || s === "completed by admin kabupaten" || s === "edited by admin kabupaten") {
         approvedCount++;
+      } else if (s === "revoked by pengawas" || s === "revoked") {
+        revokedCount++;
       } else if (s === "kosong" || s === "") {
         emptyCount++;
       }
     });
 
-    const otherCount = submitCount + rejectCount + approvedCount;
+    const otherCount = submitCount + rejectCount + approvedCount + revokedCount;
     const completionRate = total > 0 ? (otherCount / total) * 100 : 0;
     const activeOfficers = new Set(rawData.map(r => r.officer).filter(Boolean)).size;
 
@@ -489,6 +538,7 @@ export default function DashboardPage() {
       submitCount,
       rejectCount,
       approvedCount,
+      revokedCount,
       emptyCount,
       otherCount,
       completionRate,
@@ -504,6 +554,7 @@ export default function DashboardPage() {
     const dApprove = summaryStatusCounts.approve || stats.approvedCount;
     const dDraft = summaryStatusCounts.draft || stats.draftCount;
     const dReject = summaryStatusCounts.reject || stats.rejectCount;
+    const dRevoked = summaryStatusCounts.revoked || stats.revokedCount;
 
     return {
       displayTotal: dTotal,
@@ -512,8 +563,8 @@ export default function DashboardPage() {
       displayApprove: dApprove,
       displayDraft: dDraft,
       displayReject: dReject,
-      displayRealisasi: dDraft + dSubmit + dApprove + dReject,
-      displayRealisasiFasih: dSubmit + dApprove + dReject
+      displayRealisasi: dDraft + dSubmit + dApprove + dReject + dRevoked,
+      displayRealisasiFasih: dSubmit + dApprove + dReject + dRevoked
     };
   }, [totalPrelistSummary, summaryStatusCounts, stats]);
 

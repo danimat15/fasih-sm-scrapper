@@ -1,0 +1,23 @@
+#1. Dominasi Biaya Produksi
+Kegiatan usaha tidak memproduksi barang sendiri, namun biaya produksi mendominasi komposisi pengeluaran (lebih dari 50%).
+
+#2. Keuntungan Usaha
+Selisih antara pendapatan dan pengeluaran bernilai negatif (mengalami kerugian).
+
+#3. Penyertaan Modal Korporasi
+Terdapat anomali karena status badan usaha tercatat sebagai "Bukan Badan Usaha", namun memiliki penyertaan modal dari korporasi publik.
+
+#4. Data Keuangan MBG
+Terdapat anomali pada data Makan Bergizi Gratis (MBG) berdasarkan rasio antara nilai pendapatan dan pengeluaran.
+
+#5. Hubungan Aset, Pekerja, dan Produksi Usaha
+Terdapat anomali pada hubungan antara nilai aset, total nilai produksi/penjualan/pendapatan, dan jumlah pekerja.
+
+#6. Penggunaan Internet pada Usaha Menengah dan Besar
+Pendapatan usaha menunjukkan skala usaha menengah atau besar, namun usaha tidak menggunakan internet.
+
+#7. Kepemilikan Laporan Keuangan pada Usaha Menengah dan Besar
+Pendapatan usaha menunjukkan skala usaha menengah atau besar, namun usaha tidak memiliki laporan atau pencatatan keuangan.
+
+#8. Perbedaan KBLI 2 Digit antara Hasil Pendataan dan SBR
+KBLI 2 digit hasil pendataan berbeda dengan KBLI 2 digit pada SBR. Perlu dilakukan verifikasi kesesuaian klasifikasi usaha serta pemetaan (mapping) kode KBLI apabila diperlukan.

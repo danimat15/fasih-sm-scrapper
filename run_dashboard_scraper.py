@@ -151,20 +151,58 @@ def recover_and_navigate(page, context, auth_file, target_url, category, target_
     return True
 
 
+def normalize_status_name(status_raw: str) -> str:
+    status_raw = status_raw.strip().upper()
+    predefined = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
+    if status_raw in predefined:
+        return predefined[status_raw]
+    
+    words = status_raw.split()
+    formatted_words = []
+    for w in words:
+        if w in ["BY", "OF", "IN", "FOR", "AND", "OR", "TO"]:
+            formatted_words.append(w.lower())
+        elif w in ["PPL", "PML", "SLS", "SBR", "BPS"]:
+            formatted_words.append(w)
+        else:
+            formatted_words.append(w.capitalize())
+            
+    if formatted_words:
+        formatted_words[0] = formatted_words[0].capitalize()
+        
+    return " ".join(formatted_words)
+
 def main():
     auth_file = "auth_state.json"
     target_url = "https://fasih-sm.bps.go.id/app/surveys/a0429e96-51a5-477b-a415-485f9c153004/fd68e454-ba45-4b85-8205-f3bf777ded24"
     output_csv = "dashboard_scraped_data.csv"
 
-    status_columns = [
-        "OPEN",
-        "DRAFT",
-        "SUBMITTED BY Pencacah",
-        "REJECTED BY Pengawas",
-        "APPROVED BY Pengawas",
-        "REVOKED BY Pengawas",
-    ]
+    # Status mapping table
+    status_mapping = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
 
+    status_columns = list(status_mapping.values())
     headers = ["Category", "Email", "SLS Code"] + status_columns
     scraped_data_dict = {}
 
@@ -260,15 +298,6 @@ def main():
         print("\n--- Phase 2: Scraping Rekap Petugas ---")
         page.locator("button:has-text('Rekap Petugas')").click()
         page.wait_for_timeout(random.randint(1200, 2000))
-
-        status_mapping = {
-            "OPEN": "OPEN",
-            "DRAFT": "DRAFT",
-            "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
-            "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
-            "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
-            "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
-        }
 
         for category in ["Pengawas", "Pencacah"]:
             print(f"\nScraping Category: {category}")
@@ -416,9 +445,19 @@ def main():
                             tag = tags.nth(k)
                             spans = tag.locator("span")
                             if spans.count() >= 2:
-                                status_name = spans.nth(0).text_content().strip().upper()
+                                status_raw = spans.nth(0).text_content().strip()
+                                status_name = status_raw.upper()
                                 count_str = spans.nth(1).text_content().strip()
-                                if status_name in status_mapping:
+                                
+                                # Dynamic status check & registration
+                                if status_name not in status_mapping:
+                                    norm_name = normalize_status_name(status_raw)
+                                    status_mapping[status_name] = norm_name
+                                    if norm_name not in status_columns:
+                                        status_columns.append(norm_name)
+                                        headers = ["Category", "Email", "SLS Code"] + status_columns
+                                        print(f"  [DYNAMIC STATUS] Registered new status: '{norm_name}'")
+                                        
                                     try:
                                         scraped_data_dict[key][status_mapping[status_name]] = int(count_str)
                                     except ValueError:
@@ -542,9 +581,13 @@ def main():
                 norm_key = (key[0], key[1].lower(), key[2])
                 if norm_key in merged_data:
                     updated_count += 1
+                    # Merge dynamically
+                    for col in status_columns:
+                        if col in val:
+                            merged_data[norm_key][col] = val[col]
                 else:
                     new_count += 1
-                merged_data[norm_key] = val
+                    merged_data[norm_key] = val
 
             print(f"Merge: {updated_count} updated, {new_count} new.")
 
@@ -552,7 +595,7 @@ def main():
                 writer = csv.writer(f)
                 writer.writerow(headers)
                 for key, val in merged_data.items():
-                    writer.writerow(list(key) + [val[col] for col in status_columns])
+                    writer.writerow(list(key) + [val.get(col, 0) for col in status_columns])
 
             print(f"Written {len(merged_data)} rows to '{output_csv}'.")
         except Exception as e:

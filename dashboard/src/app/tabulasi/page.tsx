@@ -57,6 +57,17 @@ interface CellStats {
   approve: number;
   reject: number;
   revoked: number;
+  // 10 individual statuses
+  open_count: number;
+  draft_count: number;
+  submitted_pencacah: number;
+  submitted_respondent: number;
+  rejected_pengawas: number;
+  rejected_admin: number;
+  approved_pengawas: number;
+  completed_admin: number;
+  edited_admin: number;
+  revoked_pengawas: number;
 }
 
 interface RowStats {
@@ -101,6 +112,65 @@ const normalizeScale = (scaleStr: string): string => {
   return "Keluarga";
 };
 
+const parseStatus = (statusStr: string) => {
+  const status = (statusStr || "").toLowerCase().trim();
+  
+  const isOpen = status === "open" || status === "";
+  const isDraft = status === "draft";
+  const isSubmittedPencacah = status === "submitted by pencacah" || status === "submit" || status === "submitted";
+  const isSubmittedRespondent = status === "submitted respondent";
+  const isRejectedPengawas = status === "rejected by pengawas" || status === "reject" || status === "rejected";
+  const isRejectedAdmin = status === "rejected by admin kabupaten";
+  const isApprovedPengawas = status === "approved by pengawas" || status === "approve" || status === "approved";
+  const isCompletedAdmin = status === "completed by admin kabupaten";
+  const isEditedAdmin = status === "edited by admin kabupaten";
+  const isRevokedPengawas = status === "revoked by pengawas" || status === "revoked";
+
+  // For backward compatibility
+  const isSubmit = isSubmittedPencacah || isSubmittedRespondent;
+  const isApprove = isApprovedPengawas || isCompletedAdmin || isEditedAdmin;
+  const isReject = isRejectedPengawas || isRejectedAdmin;
+  const isRevoked = isRevokedPengawas;
+  
+  return {
+    isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+    isSubmittedPencacah, isSubmittedRespondent,
+    isRejectedPengawas, isRejectedAdmin,
+    isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+  };
+};
+
+const calculateTargetAndDiff = (realisasiPct: number) => {
+  const startDate = new Date("2026-06-15");
+  const today = new Date();
+  
+  // Reset time to midnight for accurate day calculations
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const current = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  
+  const diffTime = current.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  
+  // Daily target addition happens at 12:00 PM (noon)
+  let elapsedDays = diffDays;
+  if (today.getHours() < 12) {
+    elapsedDays = diffDays - 1;
+  }
+  elapsedDays = Math.max(0, elapsedDays);
+  
+  const dailyTarget = 1.67;
+  const cumulativeTarget = elapsedDays * dailyTarget;
+  const diff = realisasiPct - cumulativeTarget;
+  
+  return {
+    elapsedDays,
+    cumulativeTarget,
+    diff,
+    isAboveTarget: diff >= 0,
+    isBelowHalfTarget: realisasiPct < (0.5 * cumulativeTarget)
+  };
+};
+
 export default function TabulasiPage() {
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -111,6 +181,8 @@ export default function TabulasiPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
+
+  const bannerTargetInfo = useMemo(() => calculateTargetAndDiff(0), [lastUpdated]);
 
   // Filter & Search states
   const [selectedKec, setSelectedKec] = useState<string>("all");
@@ -348,7 +420,18 @@ export default function TabulasiPage() {
     submit: 0,
     approve: 0,
     reject: 0,
-    revoked: 0
+    revoked: 0,
+    // 10 individual statuses
+    open_count: 0,
+    draft_count: 0,
+    submitted_pencacah: 0,
+    submitted_respondent: 0,
+    rejected_pengawas: 0,
+    rejected_admin: 0,
+    approved_pengawas: 0,
+    completed_admin: 0,
+    edited_admin: 0,
+    revoked_pengawas: 0
   });
 
   // Unique lists from both data sources
@@ -422,15 +505,12 @@ export default function TabulasiPage() {
       // Aggregate records
       records.forEach(r => {
         const cat = getScaleCategory(r.scale);
-        const status = r.status.toLowerCase().trim();
-
-        // Process status checks
-        const isOpen = status === "open" || status === "";
-        const isDraft = status === "draft";
-        const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-        const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-        const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-        const isRevoked = status === "revoked by pengawas" || status === "revoked";
+        const {
+          isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+          isSubmittedPencacah, isSubmittedRespondent,
+          isRejectedPengawas, isRejectedAdmin,
+          isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+        } = parseStatus(r.status);
         const isRealisasi = isSubmit || isReject || isApprove || isRevoked;
 
         const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -445,6 +525,17 @@ export default function TabulasiPage() {
           if (isApprove) cell.approve += val;
           if (isReject) cell.reject += val;
           if (isRevoked) cell.revoked += val;
+
+          if (isOpen) cell.open_count += val;
+          if (isDraft) cell.draft_count += val;
+          if (isSubmittedPencacah) cell.submitted_pencacah += val;
+          if (isSubmittedRespondent) cell.submitted_respondent += val;
+          if (isRejectedPengawas) cell.rejected_pengawas += val;
+          if (isRejectedAdmin) cell.rejected_admin += val;
+          if (isApprovedPengawas) cell.approved_pengawas += val;
+          if (isCompletedAdmin) cell.completed_admin += val;
+          if (isEditedAdmin) cell.edited_admin += val;
+          if (isRevokedPengawas) cell.revoked_pengawas += val;
         };
 
         // Add to category
@@ -511,14 +602,12 @@ export default function TabulasiPage() {
       // Aggregate records
       records.forEach(r => {
         const cat = getScaleCategory(r.scale);
-        const status = r.status.toLowerCase().trim();
-
-        const isOpen = status === "open" || status === "";
-        const isDraft = status === "draft";
-        const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-        const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-        const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-        const isRevoked = status === "revoked by pengawas" || status === "revoked";
+        const {
+          isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+          isSubmittedPencacah, isSubmittedRespondent,
+          isRejectedPengawas, isRejectedAdmin,
+          isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+        } = parseStatus(r.status);
         const isRealisasi = isReject || isApprove || isRevoked; // PML realisasi = reject + approve + revoked
 
         const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -532,6 +621,17 @@ export default function TabulasiPage() {
           if (isApprove) cell.approve += val;
           if (isReject) cell.reject += val;
           if (isRevoked) cell.revoked += val;
+
+          if (isOpen) cell.open_count += val;
+          if (isDraft) cell.draft_count += val;
+          if (isSubmittedPencacah) cell.submitted_pencacah += val;
+          if (isSubmittedRespondent) cell.submitted_respondent += val;
+          if (isRejectedPengawas) cell.rejected_pengawas += val;
+          if (isRejectedAdmin) cell.rejected_admin += val;
+          if (isApprovedPengawas) cell.approved_pengawas += val;
+          if (isCompletedAdmin) cell.completed_admin += val;
+          if (isEditedAdmin) cell.edited_admin += val;
+          if (isRevokedPengawas) cell.revoked_pengawas += val;
         };
 
         if (cat && rowStats.categories[cat]) {
@@ -570,13 +670,12 @@ export default function TabulasiPage() {
     const records = rawData.filter(r => pplEmails.has(r.searchedEmail) || visibleKecs.has(normalizeKec(r.nama_kec)));
     
     records.forEach(r => {
-      const status = r.status.toLowerCase().trim();
-      const isOpen = status === "open" || status === "";
-      const isDraft = status === "draft";
-      const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-      const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-      const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-      const isRevoked = status === "revoked by pengawas" || status === "revoked";
+      const {
+        isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+        isSubmittedPencacah, isSubmittedRespondent,
+        isRejectedPengawas, isRejectedAdmin,
+        isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+      } = parseStatus(r.status);
       const isRealisasi = isReject || isApprove || isRevoked; // PML realisasi = reject + approve + revoked
 
       const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -588,6 +687,17 @@ export default function TabulasiPage() {
       if (isApprove) totalStats.approve += val;
       if (isReject) totalStats.reject += val;
       if (isRevoked) totalStats.revoked += val;
+
+      if (isOpen) totalStats.open_count += val;
+      if (isDraft) totalStats.draft_count += val;
+      if (isSubmittedPencacah) totalStats.submitted_pencacah += val;
+      if (isSubmittedRespondent) totalStats.submitted_respondent += val;
+      if (isRejectedPengawas) totalStats.rejected_pengawas += val;
+      if (isRejectedAdmin) totalStats.rejected_admin += val;
+      if (isApprovedPengawas) totalStats.approved_pengawas += val;
+      if (isCompletedAdmin) totalStats.completed_admin += val;
+      if (isEditedAdmin) totalStats.edited_admin += val;
+      if (isRevokedPengawas) totalStats.revoked_pengawas += val;
     });
     
     const completionRate = totalStats.target > 0 ? (totalStats.realisasi / totalStats.target) * 100 : 0;
@@ -622,14 +732,12 @@ export default function TabulasiPage() {
       }
 
       const cat = getScaleCategory(r.scale);
-      const status = r.status.toLowerCase().trim();
-
-      const isOpen = status === "open" || status === "";
-      const isDraft = status === "draft";
-      const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-      const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-      const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-      const isRevoked = status === "revoked by pengawas" || status === "revoked";
+      const {
+        isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+        isSubmittedPencacah, isSubmittedRespondent,
+        isRejectedPengawas, isRejectedAdmin,
+        isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+      } = parseStatus(r.status);
       const isRealisasi = isSubmit || isReject || isApprove || isRevoked;
 
       const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -643,6 +751,17 @@ export default function TabulasiPage() {
         if (isApprove) cell.approve += val;
         if (isReject) cell.reject += val;
         if (isRevoked) cell.revoked += val;
+
+        if (isOpen) cell.open_count += val;
+        if (isDraft) cell.draft_count += val;
+        if (isSubmittedPencacah) cell.submitted_pencacah += val;
+        if (isSubmittedRespondent) cell.submitted_respondent += val;
+        if (isRejectedPengawas) cell.rejected_pengawas += val;
+        if (isRejectedAdmin) cell.rejected_admin += val;
+        if (isApprovedPengawas) cell.approved_pengawas += val;
+        if (isCompletedAdmin) cell.completed_admin += val;
+        if (isEditedAdmin) cell.edited_admin += val;
+        if (isRevokedPengawas) cell.revoked_pengawas += val;
       };
 
       if (cat && statsMap[slsCode].categories[cat]) {
@@ -679,6 +798,18 @@ export default function TabulasiPage() {
       totalStats.submit += t.submit;
       totalStats.approve += t.approve;
       totalStats.reject += t.reject;
+      totalStats.revoked += t.revoked;
+
+      totalStats.open_count += t.open_count;
+      totalStats.draft_count += t.draft_count;
+      totalStats.submitted_pencacah += t.submitted_pencacah;
+      totalStats.submitted_respondent += t.submitted_respondent;
+      totalStats.rejected_pengawas += t.rejected_pengawas;
+      totalStats.rejected_admin += t.rejected_admin;
+      totalStats.approved_pengawas += t.approved_pengawas;
+      totalStats.completed_admin += t.completed_admin;
+      totalStats.edited_admin += t.edited_admin;
+      totalStats.revoked_pengawas += t.revoked_pengawas;
     });
 
     const completionRate = totalStats.target > 0 ? (totalStats.realisasi / totalStats.target) * 100 : 0;
@@ -719,14 +850,12 @@ export default function TabulasiPage() {
 
       records.forEach(r => {
         const cat = getScaleCategory(r.scale);
-        const status = r.status.toLowerCase().trim();
-
-        const isOpen = status === "open" || status === "";
-        const isDraft = status === "draft";
-        const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-        const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-        const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-        const isRevoked = status === "revoked by pengawas" || status === "revoked";
+        const {
+          isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+          isSubmittedPencacah, isSubmittedRespondent,
+          isRejectedPengawas, isRejectedAdmin,
+          isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+        } = parseStatus(r.status);
         const isRealisasi = isSubmit || isReject || isApprove || isRevoked;
 
         const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -740,6 +869,17 @@ export default function TabulasiPage() {
           if (isApprove) cell.approve += val;
           if (isReject) cell.reject += val;
           if (isRevoked) cell.revoked += val;
+
+          if (isOpen) cell.open_count += val;
+          if (isDraft) cell.draft_count += val;
+          if (isSubmittedPencacah) cell.submitted_pencacah += val;
+          if (isSubmittedRespondent) cell.submitted_respondent += val;
+          if (isRejectedPengawas) cell.rejected_pengawas += val;
+          if (isRejectedAdmin) cell.rejected_admin += val;
+          if (isApprovedPengawas) cell.approved_pengawas += val;
+          if (isCompletedAdmin) cell.completed_admin += val;
+          if (isEditedAdmin) cell.edited_admin += val;
+          if (isRevokedPengawas) cell.revoked_pengawas += val;
         };
 
         if (cat && kecStats.categories[cat]) {
@@ -804,14 +944,12 @@ export default function TabulasiPage() {
 
       records.forEach(r => {
         const cat = getScaleCategory(r.scale);
-        const status = r.status.toLowerCase().trim();
-
-        const isOpen = status === "open" || status === "";
-        const isDraft = status === "draft";
-        const isSubmit = status === "submitted by pencacah" || status === "submit" || status === "submitted";
-        const isApprove = status === "approve" || status === "approved" || status === "approved by pengawas";
-        const isReject = status === "rejected by pengawas" || status === "reject" || status === "rejected";
-        const isRevoked = status === "revoked by pengawas" || status === "revoked";
+        const {
+          isOpen, isDraft, isSubmit, isApprove, isReject, isRevoked,
+          isSubmittedPencacah, isSubmittedRespondent,
+          isRejectedPengawas, isRejectedAdmin,
+          isApprovedPengawas, isCompletedAdmin, isEditedAdmin, isRevokedPengawas
+        } = parseStatus(r.status);
         const isRealisasi = isSubmit || isReject || isApprove || isRevoked; // Kecamatan uses: submit + reject + approve + revoked
 
         const val = tabulationMetric === "sampel" ? 1 : r.jumlahUsaha;
@@ -825,6 +963,17 @@ export default function TabulasiPage() {
           if (isApprove) cell.approve += val;
           if (isReject) cell.reject += val;
           if (isRevoked) cell.revoked += val;
+
+          if (isOpen) cell.open_count += val;
+          if (isDraft) cell.draft_count += val;
+          if (isSubmittedPencacah) cell.submitted_pencacah += val;
+          if (isSubmittedRespondent) cell.submitted_respondent += val;
+          if (isRejectedPengawas) cell.rejected_pengawas += val;
+          if (isRejectedAdmin) cell.rejected_admin += val;
+          if (isApprovedPengawas) cell.approved_pengawas += val;
+          if (isCompletedAdmin) cell.completed_admin += val;
+          if (isEditedAdmin) cell.edited_admin += val;
+          if (isRevokedPengawas) cell.revoked_pengawas += val;
         };
 
         if (cat && kecStats.categories[cat]) {
@@ -852,6 +1001,18 @@ export default function TabulasiPage() {
       totalStats.submit += t.submit;
       totalStats.approve += t.approve;
       totalStats.reject += t.reject;
+      totalStats.revoked += t.revoked;
+
+      totalStats.open_count += t.open_count;
+      totalStats.draft_count += t.draft_count;
+      totalStats.submitted_pencacah += t.submitted_pencacah;
+      totalStats.submitted_respondent += t.submitted_respondent;
+      totalStats.rejected_pengawas += t.rejected_pengawas;
+      totalStats.rejected_admin += t.rejected_admin;
+      totalStats.approved_pengawas += t.approved_pengawas;
+      totalStats.completed_admin += t.completed_admin;
+      totalStats.edited_admin += t.edited_admin;
+      totalStats.revoked_pengawas += t.revoked_pengawas;
     });
 
     const completionRate = totalStats.target > 0 ? (totalStats.realisasi / totalStats.target) * 100 : 0;
@@ -1100,25 +1261,45 @@ export default function TabulasiPage() {
           <span>{pct}%</span>
         </div>
         <div className="space-y-0.5 opacity-90 text-[10px] pl-1 font-semibold text-slate-500 dark:text-slate-400">
-          <div className="flex justify-between">
+          <div className="flex justify-between gap-2">
             <span>1. Open</span>
-            <span className="font-bold text-amber-600 dark:text-amber-500">{stats.open}</span>
+            <span className="font-bold text-amber-600 dark:text-amber-500">{stats.open_count}</span>
           </div>
-          <div className="flex justify-between">
-            <span>2. Submitted by Pencacah</span>
-            <span className="font-bold text-teal-600 dark:text-teal-500">{stats.submit}</span>
+          <div className="flex justify-between gap-2">
+            <span>2. Draft</span>
+            <span className="font-bold text-blue-600 dark:text-blue-500">{stats.draft_count}</span>
           </div>
-          <div className="flex justify-between">
-            <span>3. Draft</span>
-            <span className="font-bold text-blue-600 dark:text-blue-500">{stats.draft}</span>
+          <div className="flex justify-between gap-2">
+            <span>3. Sub PPL</span>
+            <span className="font-bold text-teal-650 dark:text-teal-400">{stats.submitted_pencacah}</span>
           </div>
-          <div className="flex justify-between">
-            <span>4. Rejected by Pengawas</span>
-            <span className="font-bold text-red-600 dark:text-red-500">{stats.reject}</span>
+          <div className="flex justify-between gap-2">
+            <span>4. Sub Resp</span>
+            <span className="font-bold text-teal-600/80 dark:text-teal-400/80">{stats.submitted_respondent}</span>
           </div>
-          <div className="flex justify-between">
-            <span>5. Approved by Pengawas</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-500">{stats.approve}</span>
+          <div className="flex justify-between gap-2">
+            <span>5. Rej PML</span>
+            <span className="font-bold text-red-600 dark:text-red-500">{stats.rejected_pengawas}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>6. Rej Kab</span>
+            <span className="font-bold text-red-600/80 dark:text-red-400/80">{stats.rejected_admin}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>7. App PML</span>
+            <span className="font-bold text-emerald-650 dark:text-emerald-500">{stats.approved_pengawas}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>8. Comp Kab</span>
+            <span className="font-bold text-emerald-650/80 dark:text-emerald-450/85">{stats.completed_admin}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>9. Edit Kab</span>
+            <span className="font-bold text-emerald-600/80 dark:text-emerald-400/80">{stats.edited_admin}</span>
+          </div>
+          <div className="flex justify-between gap-2">
+            <span>10. Revoked</span>
+            <span className="font-bold text-rose-600 dark:text-rose-500/90">{stats.revoked_pengawas}</span>
           </div>
         </div>
       </div>
@@ -1263,6 +1444,42 @@ export default function TabulasiPage() {
           </div>
         ) : (
           <>
+            {/* Warning Banner Info */}
+            <div className="mb-6 p-4 rounded-xl border bg-amber-500/5 dark:bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs flex gap-2.5 items-start">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <div>
+                <span className="font-bold text-slate-800 dark:text-slate-200">Ketentuan Pewarnaan & Rekapitulasi Target Harian:</span>
+                <ul className="list-disc list-inside mt-1 flex flex-col gap-1 text-slate-600 dark:text-slate-300">
+                  <li>
+                    Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                  </li>
+                  <li>
+                    Aturan Pewarnaan Baris & Realisasi (PCL, PML, Kecamatan):
+                    <ul className="list-disc list-inside pl-5 mt-0.5 flex flex-col gap-0.5">
+                      <li>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                      </li>
+                      <li>
+                        <span className="text-red-500 dark:text-red-400 font-extrabold">Merah</span>: Di bawah 50% target harian akumulatif (<span className="font-bold font-mono">&lt; {(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}%</span>).
+                      </li>
+                      <li>
+                        <span className="text-amber-650 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <span className="font-bold">Progres</span> dihitung dari jumlah status yang bukan OPEN dan DRAFT.
+                  </li>
+                  <li>
+                    <span className="font-bold">Realisasi PCL & Kecamatan</span> = APPROVED BY Pengawas + SUBMITTED BY Pencacah + REJECTED BY Pengawas + REJECTED BY Admin Kabupaten + REVOKED BY Pengawas + SUBMITTED RESPONDENT + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
+                  </li>
+                  <li>
+                    <span className="font-bold">Realisasi PML</span> = APPROVED BY Pengawas + REJECTED BY Pengawas + REVOKED BY Pengawas + REJECTED BY Admin Kabupaten + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
+                  </li>
+                </ul>
+              </div>
+            </div>
+
             {/* View Tabs */}
             <div className="flex border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto scrollbar-none flex-nowrap min-w-0 w-full">
               <button

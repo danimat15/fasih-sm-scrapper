@@ -38,6 +38,19 @@ interface DashboardRecord {
   reject: number;         // REJECTED BY Pengawas count
   approve: number;        // APPROVED BY Pengawas count
   revoked: number;        // REVOKED BY Pengawas count
+  
+  // 10 individual status values:
+  open_count: number;
+  draft_count: number;
+  submitted_pencacah: number;
+  submitted_respondent: number;
+  rejected_pengawas: number;
+  rejected_admin: number;
+  approved_pengawas: number;
+  completed_admin: number;
+  edited_admin: number;
+  revoked_pengawas: number;
+
   namaPetugas: string;    // Name of officer
   jabatanPetugas: string; // PPL or PML
   namaKec: string;        // Kecamatan name
@@ -61,6 +74,19 @@ interface OfficerStats {
     reject: number;
     approve: number;
     revoked: number;
+    
+    // 10 individual status values:
+    open_count: number;
+    draft_count: number;
+    submitted_pencacah: number;
+    submitted_respondent: number;
+    rejected_pengawas: number;
+    rejected_admin: number;
+    approved_pengawas: number;
+    completed_admin: number;
+    edited_admin: number;
+    revoked_pengawas: number;
+
     total: number;
     progress: number;
     isPrioritas: boolean;
@@ -71,6 +97,19 @@ interface OfficerStats {
   reject: number;
   approve: number;
   revoked: number;
+
+  // 10 individual status values:
+  open_count: number;
+  draft_count: number;
+  submitted_pencacah: number;
+  submitted_respondent: number;
+  rejected_pengawas: number;
+  rejected_admin: number;
+  approved_pengawas: number;
+  completed_admin: number;
+  edited_admin: number;
+  revoked_pengawas: number;
+
   total: number;
   progress: number; // sum of submit + reject + approve + revoked
   realisasi: number; // PCL: submit + reject + approve; PML: reject + approve
@@ -86,6 +125,19 @@ interface KecamatanStats {
   reject: number;
   approve: number;
   revoked: number;
+
+  // 10 individual status values:
+  open_count: number;
+  draft_count: number;
+  submitted_pencacah: number;
+  submitted_respondent: number;
+  rejected_pengawas: number;
+  rejected_admin: number;
+  approved_pengawas: number;
+  completed_admin: number;
+  edited_admin: number;
+  revoked_pengawas: number;
+
   total: number;
   progress: number;
   realisasi: number;
@@ -99,6 +151,19 @@ interface KecamatanStats {
     reject: number;
     approve: number;
     revoked: number;
+
+    // 10 individual status values:
+    open_count: number;
+    draft_count: number;
+    submitted_pencacah: number;
+    submitted_respondent: number;
+    rejected_pengawas: number;
+    rejected_admin: number;
+    approved_pengawas: number;
+    completed_admin: number;
+    edited_admin: number;
+    revoked_pengawas: number;
+
     total: number;
     progress: number;
     realisasi: number;
@@ -218,12 +283,22 @@ export default function PetugasPage() {
     const idxCategory = headers.indexOf("category");
     const idxEmail = headers.indexOf("email");
     const idxSlsCode = headers.indexOf("sls code");
+    
     const idxOpen = headers.indexOf("open");
     const idxDraft = headers.indexOf("draft");
-    const idxSubmit = headers.findIndex(h => h.includes("submitted"));
-    const idxReject = headers.findIndex(h => h.includes("rejected"));
-    const idxApprove = headers.findIndex(h => h.includes("approved"));
-    const idxRevoked = headers.findIndex(h => h.includes("revoked"));
+    
+    const idxSubmit = headers.indexOf("submitted by pencacah");
+    const idxSubmitResp = headers.indexOf("submitted respondent");
+    
+    const idxReject = headers.indexOf("rejected by pengawas");
+    const idxRejectAdmin = headers.indexOf("rejected by admin kabupaten");
+    
+    const idxApprove = headers.indexOf("approved by pengawas");
+    const idxCompletedAdmin = headers.indexOf("completed by admin kabupaten");
+    const idxEditedAdmin = headers.indexOf("edited by admin kabupaten");
+    
+    const idxRevoked = headers.indexOf("revoked by pengawas");
+    
     const idxNamaPetugas = headers.indexOf("nama_petugas");
     const idxJabatanPetugas = headers.indexOf("jabatan_petugas");
     const idxNamaKec = headers.indexOf("nama_kec");
@@ -254,16 +329,43 @@ export default function PetugasPage() {
       row.push(entry);
 
       if (row.length >= 8) {
+        const valOpen = idxOpen !== -1 ? parseInt(row[idxOpen]) || 0 : 0;
+        const valDraft = idxDraft !== -1 ? parseInt(row[idxDraft]) || 0 : 0;
+        
+        const valSubmitPencacah = idxSubmit !== -1 ? parseInt(row[idxSubmit]) || 0 : 0;
+        const valSubmitResp = idxSubmitResp !== -1 ? parseInt(row[idxSubmitResp]) || 0 : 0;
+        
+        const valRejectPengawas = idxReject !== -1 ? parseInt(row[idxReject]) || 0 : 0;
+        const valRejectAdmin = idxRejectAdmin !== -1 ? parseInt(row[idxRejectAdmin]) || 0 : 0;
+        
+        const valApprovePengawas = idxApprove !== -1 ? parseInt(row[idxApprove]) || 0 : 0;
+        const valCompletedAdmin = idxCompletedAdmin !== -1 ? parseInt(row[idxCompletedAdmin]) || 0 : 0;
+        const valEditedAdmin = idxEditedAdmin !== -1 ? parseInt(row[idxEditedAdmin]) || 0 : 0;
+        
+        const valRevoked = idxRevoked !== -1 ? parseInt(row[idxRevoked]) || 0 : 0;
+
         parsed.push({
           category: idxCategory !== -1 && row[idxCategory] ? row[idxCategory].replace(/"/g, "").trim() : "",
           email: idxEmail !== -1 && row[idxEmail] ? row[idxEmail].replace(/"/g, "").trim() : "",
           slsCode: idxSlsCode !== -1 && row[idxSlsCode] ? row[idxSlsCode].replace(/"/g, "").trim() : "",
-          open: idxOpen !== -1 ? parseInt(row[idxOpen]) || 0 : 0,
-          draft: idxDraft !== -1 ? parseInt(row[idxDraft]) || 0 : 0,
-          submit: idxSubmit !== -1 ? parseInt(row[idxSubmit]) || 0 : 0,
-          reject: idxReject !== -1 ? parseInt(row[idxReject]) || 0 : 0,
-          approve: idxApprove !== -1 ? parseInt(row[idxApprove]) || 0 : 0,
-          revoked: idxRevoked !== -1 ? parseInt(row[idxRevoked]) || 0 : 0,
+          open: valOpen,
+          draft: valDraft,
+          submit: valSubmitPencacah + valSubmitResp,
+          reject: valRejectPengawas + valRejectAdmin,
+          approve: valApprovePengawas + valCompletedAdmin + valEditedAdmin,
+          revoked: valRevoked,
+          
+          open_count: valOpen,
+          draft_count: valDraft,
+          submitted_pencacah: valSubmitPencacah,
+          submitted_respondent: valSubmitResp,
+          rejected_pengawas: valRejectPengawas,
+          rejected_admin: valRejectAdmin,
+          approved_pengawas: valApprovePengawas,
+          completed_admin: valCompletedAdmin,
+          edited_admin: valEditedAdmin,
+          revoked_pengawas: valRevoked,
+
           namaPetugas: idxNamaPetugas !== -1 && row[idxNamaPetugas] ? row[idxNamaPetugas].replace(/"/g, "").trim() : "",
           jabatanPetugas: idxJabatanPetugas !== -1 && row[idxJabatanPetugas] ? row[idxJabatanPetugas].replace(/"/g, "").trim() : "",
           namaKec: idxNamaKec !== -1 && row[idxNamaKec] ? row[idxNamaKec].replace(/"/g, "").trim() : "",
@@ -317,6 +419,18 @@ export default function PetugasPage() {
           reject: 0,
           approve: 0,
           revoked: 0,
+          
+          open_count: 0,
+          draft_count: 0,
+          submitted_pencacah: 0,
+          submitted_respondent: 0,
+          rejected_pengawas: 0,
+          rejected_admin: 0,
+          approved_pengawas: 0,
+          completed_admin: 0,
+          edited_admin: 0,
+          revoked_pengawas: 0,
+
           total: 0,
           progress: 0,
           realisasi: 0,
@@ -344,6 +458,18 @@ export default function PetugasPage() {
         reject: record.reject,
         approve: record.approve,
         revoked: record.revoked,
+        
+        open_count: record.open_count,
+        draft_count: record.draft_count,
+        submitted_pencacah: record.submitted_pencacah,
+        submitted_respondent: record.submitted_respondent,
+        rejected_pengawas: record.rejected_pengawas,
+        rejected_admin: record.rejected_admin,
+        approved_pengawas: record.approved_pengawas,
+        completed_admin: record.completed_admin,
+        edited_admin: record.edited_admin,
+        revoked_pengawas: record.revoked_pengawas,
+
         total: slsTotal,
         progress: slsProgress,
         isPrioritas: record.isPrioritas === "Ya"
@@ -356,6 +482,18 @@ export default function PetugasPage() {
       map[email].reject += record.reject;
       map[email].approve += record.approve;
       map[email].revoked += record.revoked;
+      
+      map[email].open_count += record.open_count;
+      map[email].draft_count += record.draft_count;
+      map[email].submitted_pencacah += record.submitted_pencacah;
+      map[email].submitted_respondent += record.submitted_respondent;
+      map[email].rejected_pengawas += record.rejected_pengawas;
+      map[email].rejected_admin += record.rejected_admin;
+      map[email].approved_pengawas += record.approved_pengawas;
+      map[email].completed_admin += record.completed_admin;
+      map[email].edited_admin += record.edited_admin;
+      map[email].revoked_pengawas += record.revoked_pengawas;
+
       map[email].total += slsTotal;
       map[email].progress += slsProgress;
 
@@ -383,7 +521,6 @@ export default function PetugasPage() {
     });
   }, [rawData]);
 
-  // Aggregate stats by kecamatan (summing PML data)
   const kecamatanStats = useMemo(() => {
     const map: {
       [kecName: string]: {
@@ -395,6 +532,18 @@ export default function PetugasPage() {
         reject: number;
         approve: number;
         revoked: number;
+
+        open_count: number;
+        draft_count: number;
+        submitted_pencacah: number;
+        submitted_respondent: number;
+        rejected_pengawas: number;
+        rejected_admin: number;
+        approved_pengawas: number;
+        completed_admin: number;
+        edited_admin: number;
+        revoked_pengawas: number;
+
         total: number;
         progress: number;
         realisasi: number;
@@ -409,6 +558,18 @@ export default function PetugasPage() {
             reject: number;
             approve: number;
             revoked: number;
+
+            open_count: number;
+            draft_count: number;
+            submitted_pencacah: number;
+            submitted_respondent: number;
+            rejected_pengawas: number;
+            rejected_admin: number;
+            approved_pengawas: number;
+            completed_admin: number;
+            edited_admin: number;
+            revoked_pengawas: number;
+
             total: number;
             progress: number;
             realisasi: number;
@@ -433,6 +594,18 @@ export default function PetugasPage() {
           reject: 0,
           approve: 0,
           revoked: 0,
+
+          open_count: 0,
+          draft_count: 0,
+          submitted_pencacah: 0,
+          submitted_respondent: 0,
+          rejected_pengawas: 0,
+          rejected_admin: 0,
+          approved_pengawas: 0,
+          completed_admin: 0,
+          edited_admin: 0,
+          revoked_pengawas: 0,
+
           total: 0,
           progress: 0,
           realisasi: 0,
@@ -451,6 +624,18 @@ export default function PetugasPage() {
       k.reject += record.reject;
       k.approve += record.approve;
       k.revoked += record.revoked;
+
+      k.open_count += record.open_count;
+      k.draft_count += record.draft_count;
+      k.submitted_pencacah += record.submitted_pencacah;
+      k.submitted_respondent += record.submitted_respondent;
+      k.rejected_pengawas += record.rejected_pengawas;
+      k.rejected_admin += record.rejected_admin;
+      k.approved_pengawas += record.approved_pengawas;
+      k.completed_admin += record.completed_admin;
+      k.edited_admin += record.edited_admin;
+      k.revoked_pengawas += record.revoked_pengawas;
+
       k.total += slsTotal;
       k.progress += slsProgress;
       k.realisasi += slsRealisasiPml;
@@ -467,6 +652,18 @@ export default function PetugasPage() {
           reject: 0,
           approve: 0,
           revoked: 0,
+
+          open_count: 0,
+          draft_count: 0,
+          submitted_pencacah: 0,
+          submitted_respondent: 0,
+          rejected_pengawas: 0,
+          rejected_admin: 0,
+          approved_pengawas: 0,
+          completed_admin: 0,
+          edited_admin: 0,
+          revoked_pengawas: 0,
+
           total: 0,
           progress: 0,
           realisasi: 0
@@ -479,6 +676,18 @@ export default function PetugasPage() {
       p.reject += record.reject;
       p.approve += record.approve;
       p.revoked += record.revoked;
+
+      p.open_count += record.open_count;
+      p.draft_count += record.draft_count;
+      p.submitted_pencacah += record.submitted_pencacah;
+      p.submitted_respondent += record.submitted_respondent;
+      p.rejected_pengawas += record.rejected_pengawas;
+      p.rejected_admin += record.rejected_admin;
+      p.approved_pengawas += record.approved_pengawas;
+      p.completed_admin += record.completed_admin;
+      p.edited_admin += record.edited_admin;
+      p.revoked_pengawas += record.revoked_pengawas;
+
       p.total += slsTotal;
       p.slsCount += 1;
       p.progress += slsProgress;
@@ -514,6 +723,18 @@ export default function PetugasPage() {
       reject: number;
       approve: number;
       revoked: number;
+
+      open_count: number;
+      draft_count: number;
+      submitted_pencacah: number;
+      submitted_respondent: number;
+      rejected_pengawas: number;
+      rejected_admin: number;
+      approved_pengawas: number;
+      completed_admin: number;
+      edited_admin: number;
+      revoked_pengawas: number;
+
       total: number;
       progress: number;
       realisasi: number;
@@ -537,6 +758,18 @@ export default function PetugasPage() {
           reject: 0,
           approve: 0,
           revoked: 0,
+
+          open_count: 0,
+          draft_count: 0,
+          submitted_pencacah: 0,
+          submitted_respondent: 0,
+          rejected_pengawas: 0,
+          rejected_admin: 0,
+          approved_pengawas: 0,
+          completed_admin: 0,
+          edited_admin: 0,
+          revoked_pengawas: 0,
+
           total: 0,
           progress: 0,
           realisasi: 0,
@@ -565,6 +798,17 @@ export default function PetugasPage() {
         entry.reject = record.reject;
         entry.approve = record.approve;
         entry.revoked = record.revoked;
+
+        entry.open_count = record.open_count;
+        entry.draft_count = record.draft_count;
+        entry.submitted_pencacah = record.submitted_pencacah;
+        entry.submitted_respondent = record.submitted_respondent;
+        entry.rejected_pengawas = record.rejected_pengawas;
+        entry.rejected_admin = record.rejected_admin;
+        entry.approved_pengawas = record.approved_pengawas;
+        entry.completed_admin = record.completed_admin;
+        entry.edited_admin = record.edited_admin;
+        entry.revoked_pengawas = record.revoked_pengawas;
         
         const slsTotal = record.open + record.draft + record.submit + record.reject + record.approve + record.revoked;
         const slsProgress = record.submit + record.reject + record.approve + record.revoked;
@@ -1214,10 +1458,13 @@ export default function PetugasPage() {
                     </ul>
                   </li>
                   <li>
-                    <span className="font-bold">Progres</span> dihitung dari jumlah status yang bukan open dan draft (SUBMITTED + REJECTED + APPROVED + REVOKED).
+                    <span className="font-bold">Progres</span> dihitung dari jumlah status yang bukan OPEN dan DRAFT.
                   </li>
                   <li>
-                    <span className="font-bold">Realisasi PCL, Kecamatan & SLS Prioritas</span> = SUBMITTED + REJECTED + APPROVED + REVOKED. <span className="font-bold">Realisasi PML</span> = REJECTED + APPROVED + REVOKED.
+                    <span className="font-bold">Realisasi PCL, Kecamatan & SLS Prioritas</span> = APPROVED BY Pengawas + SUBMITTED BY Pencacah + REJECTED BY Pengawas + REJECTED BY Admin Kabupaten + REVOKED BY Pengawas + SUBMITTED RESPONDENT + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
+                  </li>
+                  <li>
+                    <span className="font-bold">Realisasi PML</span> = APPROVED BY Pengawas + REJECTED BY Pengawas + REVOKED BY Pengawas + REJECTED BY Admin Kabupaten + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
                   </li>
                 </ul>
               </div>
@@ -1261,23 +1508,26 @@ export default function PetugasPage() {
                           <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">SLS</th>
                         </>
                       )}
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Target</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Open</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Draft</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Submit</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Reject</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Approve</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Revoked</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Progres</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Realisasi</th>
-                      <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900 sticky right-0 top-0 z-30 border-l border-slate-200 dark:border-slate-800 shadow-[0_1px_0_0_rgba(226,232,240,1)] dark:shadow-[0_1px_0_0_rgba(30,41,59,1)]">% Realisasi</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">Target</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-amber-600 dark:text-amber-500">Open</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-blue-600 dark:text-blue-500">Draft</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-teal-650 dark:text-teal-400">Sub PPL</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-teal-600/80 dark:text-teal-400/80">Sub Resp</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-red-650 dark:text-red-550">Rej PML</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-red-600/80 dark:text-red-400/80">Rej Kab</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-emerald-650 dark:text-emerald-500">App PML</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-emerald-650/80 dark:text-emerald-450/85">Comp Kab</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-emerald-600/80 dark:text-emerald-400/80">Edit Kab</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap text-rose-600 dark:text-rose-500/90">Revoked</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">Progres</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 whitespace-nowrap">Realisasi</th>
+                      <th className="py-4 px-3 text-center bg-slate-50 dark:bg-slate-900 sticky right-0 top-0 z-30 border-l border-slate-200 dark:border-slate-800 shadow-[0_1px_0_0_rgba(226,232,240,1)] dark:shadow-[0_1px_0_0_rgba(30,41,59,1)]">% Realisasi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {activeTab === "kecamatan" ? (
-                      filteredKecamatans.length === 0 ? (
+                    {activeTab === "kecamatan" ? (                       filteredKecamatans.length === 0 ? (
                         <tr>
-                          <td colSpan={15} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
+                          <td colSpan={19} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
                             Tidak ada data kecamatan yang cocok dengan filter atau pencarian Anda.
                           </td>
                         </tr>
@@ -1317,15 +1567,19 @@ export default function PetugasPage() {
                                 </td>
                                 <td className="py-3 px-4 font-normal">{k.pmlList.length} PML</td>
                                 <td className="py-3 px-4 text-center font-normal">{k.slsCount}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-800 dark:text-slate-200">{k.total}</td>
-                                <td className="py-3 px-4 text-center font-normal text-amber-600 dark:text-amber-500/90">{k.open}</td>
-                                <td className="py-3 px-4 text-center font-normal text-blue-600 dark:text-blue-500/90">{k.draft}</td>
-                                <td className="py-3 px-4 text-center font-normal text-teal-600 dark:text-teal-500/90">{k.submit}</td>
-                                <td className="py-3 px-4 text-center font-normal text-red-600 dark:text-red-500/90">{k.reject}</td>
-                                <td className="py-3 px-4 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{k.approve}</td>
-                                <td className="py-3 px-4 text-center font-normal text-rose-600 dark:text-rose-500/90">{k.revoked}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">{k.progress}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">{k.realisasi}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{k.total}</td>
+                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{k.open_count}</td>
+                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{k.draft_count}</td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{k.submitted_pencacah}</td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{k.submitted_respondent}</td>
+                                <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">{k.rejected_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">{k.rejected_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{k.approved_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{k.completed_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">{k.edited_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{k.revoked_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{k.progress}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{k.realisasi}</td>
                                 <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-950 transition-colors">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
@@ -1355,7 +1609,7 @@ export default function PetugasPage() {
                               {/* Expanded PML List in Kecamatan Row */}
                               {isExpanded && (
                                 <tr className="bg-slate-50/20 dark:bg-slate-950/20 border-b border-slate-200 dark:border-slate-800">
-                                  <td colSpan={15} className="py-4 px-8">
+                                  <td colSpan={19} className="py-4 px-8">
                                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-4 shadow-inner">
                                       <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
                                         <UserCheck className="w-3.5 h-3.5 text-orange-500" />
@@ -1365,19 +1619,23 @@ export default function PetugasPage() {
                                         <table className="w-full text-left border-collapse text-[11px]">
                                           <thead>
                                             <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-[9px]">
-                                              <th className="pb-2 font-bold">Nama PML</th>
-                                              <th className="pb-2 font-bold">Email</th>
-                                              <th className="pb-2 text-center font-bold">SLS</th>
-                                              <th className="pb-2 text-center font-bold">Target</th>
-                                              <th className="pb-2 text-center font-bold">Open</th>
-                                              <th className="pb-2 text-center font-bold">Draft</th>
-                                              <th className="pb-2 text-center font-bold">Submit</th>
-                                              <th className="pb-2 text-center font-bold">Reject</th>
-                                              <th className="pb-2 text-center font-bold">Approve</th>
-                                              <th className="pb-2 text-center font-bold">Revoked</th>
-                                              <th className="pb-2 text-center font-bold">Progres</th>
-                                              <th className="pb-2 text-center font-bold">Realisasi</th>
-                                              <th className="pb-2 text-center font-bold">% Realisasi</th>
+                                              <th className="pb-2 font-bold whitespace-nowrap">Nama PML</th>
+                                              <th className="pb-2 font-bold whitespace-nowrap">Email</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">SLS</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Target</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Open</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Draft</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Sub PPL</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Sub Resp</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Rej PML</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Rej Kab</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">App PML</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Comp Kab</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Edit Kab</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Revoked</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Progres</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">Realisasi</th>
+                                              <th className="pb-2 text-center font-bold whitespace-nowrap">% Realisasi</th>
                                             </tr>
                                           </thead>
                                           <tbody>
@@ -1400,12 +1658,16 @@ export default function PetugasPage() {
                                                   <td className="py-2 text-slate-700 dark:text-slate-300 font-normal">{pml.email}</td>
                                                   <td className="py-2 text-center">{pml.slsCount}</td>
                                                   <td className="py-2 text-center font-semibold text-slate-800 dark:text-slate-200">{pml.total}</td>
-                                                  <td className="py-2 text-center text-amber-600 dark:text-amber-500/90">{pml.open}</td>
-                                                  <td className="py-2 text-center text-blue-600 dark:text-blue-500/90">{pml.draft}</td>
-                                                  <td className="py-2 text-center text-teal-600 dark:text-teal-500/90">{pml.submit}</td>
-                                                  <td className="py-2 text-center text-red-600 dark:text-red-500/90">{pml.reject}</td>
-                                                  <td className="py-2 text-center text-emerald-600 dark:text-emerald-500/90">{pml.approve}</td>
-                                                  <td className="py-2 text-center text-rose-600 dark:text-rose-500/90">{pml.revoked}</td>
+                                                  <td className="py-2 text-center text-amber-600 dark:text-amber-500/90">{pml.open_count}</td>
+                                                  <td className="py-2 text-center text-blue-600 dark:text-blue-500/90">{pml.draft_count}</td>
+                                                  <td className="py-2 text-center text-teal-600 dark:text-teal-500/90">{pml.submitted_pencacah}</td>
+                                                  <td className="py-2 text-center text-teal-500/80 dark:text-teal-400/80">{pml.submitted_respondent}</td>
+                                                  <td className="py-2 text-center text-red-655 dark:text-red-500/95">{pml.rejected_pengawas}</td>
+                                                  <td className="py-2 text-center text-red-600/85 dark:text-red-400/85">{pml.rejected_admin}</td>
+                                                  <td className="py-2 text-center text-emerald-600 dark:text-emerald-500/90">{pml.approved_pengawas}</td>
+                                                  <td className="py-2 text-center text-emerald-500/85 dark:text-emerald-450/85">{pml.completed_admin}</td>
+                                                  <td className="py-2 text-center text-emerald-500/75 dark:text-emerald-400/75">{pml.edited_admin}</td>
+                                                  <td className="py-2 text-center text-rose-600 dark:text-rose-500/90">{pml.revoked_pengawas}</td>
                                                   <td className="py-2 text-center font-semibold text-slate-700 dark:text-slate-300">{pml.progress}</td>
                                                   <td className="py-2 text-center font-semibold text-slate-700 dark:text-slate-300">{pml.realisasi}</td>
                                                   <td className="py-2 text-center">
@@ -1449,7 +1711,7 @@ export default function PetugasPage() {
                     ) : activeTab === "prioritas" ? (
                       filteredPrioritySLS.length === 0 ? (
                         <tr>
-                          <td colSpan={16} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
+                          <td colSpan={20} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
                             Tidak ada data SLS Prioritas yang cocok dengan filter atau pencarian Anda.
                           </td>
                         </tr>
@@ -1479,31 +1741,19 @@ export default function PetugasPage() {
                               <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                                 {item.pengawas}
                               </td>
-                              <td className="py-3 px-4 text-center font-semibold text-slate-800 dark:text-slate-200">{item.total}</td>
-                              <td className="py-3 px-4 text-center font-normal text-amber-600 dark:text-amber-500/90">
-                                {item.open}
-                              </td>
-                              <td className="py-3 px-4 text-center font-normal text-blue-600 dark:text-blue-500/90">
-                                {item.draft}
-                              </td>
-                              <td className="py-3 px-4 text-center font-normal text-teal-600 dark:text-teal-500/90">
-                                {item.submit}
-                              </td>
-                              <td className="py-3 px-4 text-center font-normal text-red-600 dark:text-red-500/90">
-                                {item.reject}
-                              </td>
-                              <td className="py-3 px-4 text-center font-normal text-emerald-600 dark:text-emerald-500/90">
-                                {item.approve}
-                              </td>
-                              <td className="py-3 px-4 text-center font-normal text-rose-600 dark:text-rose-500/90">
-                                {item.revoked}
-                              </td>
-                              <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">
-                                {item.progress}
-                              </td>
-                              <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">
-                                {item.realisasi}
-                              </td>
+                              <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{item.total}</td>
+                              <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{item.open_count}</td>
+                              <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{item.draft_count}</td>
+                              <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{item.submitted_pencacah}</td>
+                              <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{item.submitted_respondent}</td>
+                              <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">{item.rejected_pengawas}</td>
+                              <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">{item.rejected_admin}</td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{item.approved_pengawas}</td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{item.completed_admin}</td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">{item.edited_admin}</td>
+                              <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{item.revoked_pengawas}</td>
+                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.progress}</td>
+                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.realisasi}</td>
                               <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-[#fffbf6] dark:bg-[#15100d] group-hover:bg-[#ffebd6] dark:group-hover:bg-[#281a10] transition-colors">
                                 <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs bg-orange-500/10 text-orange-600 dark:text-orange-500 border border-orange-500/20`}>
                                   {pctRealisasi}%
@@ -1557,15 +1807,19 @@ export default function PetugasPage() {
                                 <td className="py-3 px-4 font-normal">{formatKecName(o.namaKec)}</td>
                                 <td className="py-3 px-4 font-normal">{o.koseka}</td>
                                 <td className="py-3 px-4 text-center font-normal">{o.slsList.length}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-800 dark:text-slate-200">{o.total}</td>
-                                <td className="py-3 px-4 text-center font-normal text-amber-600 dark:text-amber-500/90">{o.open}</td>
-                                <td className="py-3 px-4 text-center font-normal text-blue-600 dark:text-blue-500/90">{o.draft}</td>
-                                <td className="py-3 px-4 text-center font-normal text-teal-600 dark:text-teal-500/90">{o.submit}</td>
-                                <td className="py-3 px-4 text-center font-normal text-red-600 dark:text-red-500/90">{o.reject}</td>
-                                <td className="py-3 px-4 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{o.approve}</td>
-                                <td className="py-3 px-4 text-center font-normal text-rose-600 dark:text-rose-500/90">{o.revoked}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">{o.progress}</td>
-                                <td className="py-3 px-4 text-center font-semibold text-slate-700 dark:text-slate-300">{o.realisasi}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{o.total}</td>
+                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{o.open_count}</td>
+                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{o.draft_count}</td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{o.submitted_pencacah}</td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{o.submitted_respondent}</td>
+                                <td className="py-3 px-3 text-center font-normal text-red-600 dark:text-red-500/90">{o.rejected_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-normal text-red-550/80 dark:text-red-400/80">{o.rejected_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{o.approved_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{o.completed_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/70 dark:text-emerald-400/70">{o.edited_admin}</td>
+                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{o.revoked_pengawas}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{o.progress}</td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{o.realisasi}</td>
                                 <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-950 transition-colors">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
@@ -1595,7 +1849,7 @@ export default function PetugasPage() {
                               {/* Expanded SLS Detail Row */}
                               {isExpanded && (
                                 <tr className="bg-slate-50/20 dark:bg-slate-950/20 border-b border-slate-200 dark:border-slate-800">
-                                  <td colSpan={16} className="py-4 px-8">
+                                  <td colSpan={20} className="py-4 px-8">
                                     <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 p-4 shadow-inner">
                                       <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
                                         <Layers className="w-3.5 h-3.5 text-orange-500" />
@@ -1632,29 +1886,49 @@ export default function PetugasPage() {
                                                 </div>
                                               </div>
                                               <div className="grid grid-cols-2 gap-y-1.5 gap-x-2 text-[10px] text-slate-700 dark:text-slate-400 font-medium">
-                                                <div className="flex justify-between">
+                                                <div className="flex justify-between col-span-2 border-b border-slate-100 dark:border-slate-800/60 pb-1">
                                                   <span>Target:</span>
-                                                  <span className="font-bold text-slate-800 dark:text-slate-300">{sls.total}</span>
+                                                  <span className="font-extrabold text-slate-800 dark:text-slate-300">{sls.total}</span>
                                                 </div>
                                                 <div className="flex justify-between text-amber-600 dark:text-amber-500">
                                                   <span>Open:</span>
-                                                  <span className="font-bold">{sls.open}</span>
+                                                  <span className="font-bold">{sls.open_count}</span>
                                                 </div>
                                                 <div className="flex justify-between text-blue-600 dark:text-blue-500">
                                                   <span>Draft:</span>
-                                                  <span className="font-bold">{sls.draft}</span>
+                                                  <span className="font-bold">{sls.draft_count}</span>
                                                 </div>
                                                 <div className="flex justify-between text-teal-600 dark:text-teal-500">
-                                                  <span>Submit:</span>
-                                                  <span className="font-bold">{sls.submit}</span>
+                                                  <span>Sub PPL:</span>
+                                                  <span className="font-bold">{sls.submitted_pencacah}</span>
                                                 </div>
-                                                <div className="flex justify-between text-red-600 dark:text-red-500">
-                                                  <span>Reject:</span>
-                                                  <span className="font-bold">{sls.reject}</span>
+                                                <div className="flex justify-between text-teal-500/80 dark:text-teal-400/80">
+                                                  <span>Sub Resp:</span>
+                                                  <span className="font-bold">{sls.submitted_respondent}</span>
+                                                </div>
+                                                <div className="flex justify-between text-red-650 dark:text-red-500/90">
+                                                  <span>Rej PML:</span>
+                                                  <span className="font-bold">{sls.rejected_pengawas}</span>
+                                                </div>
+                                                <div className="flex justify-between text-red-600/80 dark:text-red-400/80">
+                                                  <span>Rej Kab:</span>
+                                                  <span className="font-bold">{sls.rejected_admin}</span>
                                                 </div>
                                                 <div className="flex justify-between text-emerald-600 dark:text-emerald-500">
-                                                  <span>Approve:</span>
-                                                  <span className="font-bold">{sls.approve}</span>
+                                                  <span>App PML:</span>
+                                                  <span className="font-bold">{sls.approved_pengawas}</span>
+                                                </div>
+                                                <div className="flex justify-between text-emerald-500/80 dark:text-emerald-450/85">
+                                                  <span>Comp Kab:</span>
+                                                  <span className="font-bold">{sls.completed_admin}</span>
+                                                </div>
+                                                <div className="flex justify-between text-emerald-500/70 dark:text-emerald-400/70">
+                                                  <span>Edit Kab:</span>
+                                                  <span className="font-bold">{sls.edited_admin}</span>
+                                                </div>
+                                                <div className="flex justify-between text-rose-600 dark:text-rose-500/90">
+                                                  <span>Revoked:</span>
+                                                  <span className="font-bold">{sls.revoked_pengawas}</span>
                                                 </div>
                                               </div>
                                             </div>

@@ -193,9 +193,13 @@ def process_dashboard_scraped_data(priority_sls=None):
                 print("Error: dashboard_scraped_data.csv is empty.")
                 return False
             
-            # Original 9 headers, we will append the 5 additional headers
+            # Determine base headers dynamically (Category, Email, SLS Code + Status columns)
             additional_headers = ['nama_petugas', 'jabatan_petugas', 'nama_kec', 'koseka', 'is_prioritas']
-            base_headers = headers[:9]
+            if 'nama_petugas' in headers:
+                base_len = headers.index('nama_petugas')
+            else:
+                base_len = 13  # Category, Email, SLS Code + 10 status columns
+            base_headers = headers[:base_len]
             output_headers = base_headers + additional_headers
             
             email_idx = 1
@@ -205,8 +209,8 @@ def process_dashboard_scraped_data(priority_sls=None):
                 if not row or len(row) < 3:
                     continue
                 
-                base_row = row[:9]
-                while len(base_row) < 9:
+                base_row = row[:base_len]
+                while len(base_row) < base_len:
                     base_row.append('0')
                 
                 email = base_row[email_idx].strip().lower()

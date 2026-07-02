@@ -195,14 +195,20 @@ def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, ne
 
     for key, val in new_data.items():
         norm_key = (key[0], key[1].lower(), key[2])
-        merged_data[norm_key] = val
+        # Merge dictionaries safely, defaulting missing columns to 0
+        if norm_key in merged_data:
+            for col in status_columns:
+                if col in val:
+                    merged_data[norm_key][col] = val[col]
+        else:
+            merged_data[norm_key] = val
 
     try:
         with open(dashboard_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(dashboard_headers)
             for key, val in merged_data.items():
-                row = list(key) + [val[col] for col in status_columns]
+                row = list(key) + [val.get(col, 0) for col in status_columns]
                 writer.writerow(row)
         print(f"  Successfully updated '{dashboard_csv}' with progress.")
     except Exception as csv_err:
@@ -274,6 +280,38 @@ def navigate_to_rekap_petugas(page):
     page.locator("button:has-text('Rekap Petugas')").click()
     page.wait_for_timeout(2000)
 
+def normalize_status_name(status_raw: str) -> str:
+    status_raw = status_raw.strip().upper()
+    predefined = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
+    if status_raw in predefined:
+        return predefined[status_raw]
+    
+    words = status_raw.split()
+    formatted_words = []
+    for w in words:
+        if w in ["BY", "OF", "IN", "FOR", "AND", "OR", "TO"]:
+            formatted_words.append(w.lower())
+        elif w in ["PPL", "PML", "SLS", "SBR", "BPS"]:
+            formatted_words.append(w)
+        else:
+            formatted_words.append(w.capitalize())
+            
+    if formatted_words:
+        formatted_words[0] = formatted_words[0].capitalize()
+        
+    return " ".join(formatted_words)
+
 def run_dashboard_scraper():
     auth_file = "auth_state.json"
     dashboard_csv = "dashboard_scraped_data.csv"
@@ -295,15 +333,22 @@ def run_dashboard_scraper():
     else:
         print("Running in HEADLESS mode (default for Task Scheduler).")
 
+    # Status mapping table
+    status_mapping = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
+    
     # Status columns in the output CSV for dashboard
-    status_columns = [
-        "OPEN", 
-        "DRAFT", 
-        "SUBMITTED BY Pencacah", 
-        "REJECTED BY Pengawas", 
-        "APPROVED BY Pengawas",
-        "REVOKED BY Pengawas"
-    ]
+    status_columns = list(status_mapping.values())
     dashboard_headers = ["Category", "Email", "SLS Code"] + status_columns
     scraped_data_dict = {}
 
@@ -507,15 +552,6 @@ def run_dashboard_scraper():
             STEALTH_SPEED_UP = True
             print("Enabling speed-up mode for data scraping.")
         
-        status_mapping = {
-            "OPEN": "OPEN",
-            "DRAFT": "DRAFT",
-            "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
-            "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
-            "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
-            "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
-        }
-        
         last_first_email = None
         last_pag_text = None
         
@@ -655,10 +691,20 @@ def run_dashboard_scraper():
                             tag = tags.nth(k)
                             spans = tag.locator("span")
                             if spans.count() >= 2:
-                                status_name = spans.nth(0).text_content().strip().upper()
+                                status_raw = spans.nth(0).text_content().strip()
+                                status_name = status_raw.upper()
                                 count = spans.nth(1).text_content().strip()
-                                if status_name in status_mapping:
-                                    scraped_data_dict[key][status_mapping[status_name]] = int(count)
+                                
+                                # Dynamic status check & registration
+                                if status_name not in status_mapping:
+                                    norm_name = normalize_status_name(status_raw)
+                                    status_mapping[status_name] = norm_name
+                                    if norm_name not in status_columns:
+                                        status_columns.append(norm_name)
+                                        dashboard_headers = ["Category", "Email", "SLS Code"] + status_columns
+                                        print(f"  [DYNAMIC STATUS] Registered new status: '{norm_name}'")
+                                
+                                scraped_data_dict[key][status_mapping[status_name]] = int(count)
                                     
                     # Collapse card and apply short random delay
                     card.click()
@@ -823,7 +869,7 @@ def run_dashboard_scraper():
                 writer = csv.writer(f)
                 writer.writerow(dashboard_headers)
                 for key, val in merged_data.items():
-                    row = list(key) + [val[col] for col in status_columns]
+                    row = list(key) + [val.get(col, 0) for col in status_columns]
                     writer.writerow(row)
             print(f"Successfully merged and written {len(merged_data)} SLS status rows to '{dashboard_csv}'!")
         except Exception as csv_err:

@@ -319,14 +319,20 @@ def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, ne
 
     for key, val in new_data.items():
         norm_key = (key[0], key[1].lower(), key[2])
-        merged_data[norm_key] = val
+        # Merge dictionaries safely, defaulting missing columns to 0
+        if norm_key in merged_data:
+            for col in status_columns:
+                if col in val:
+                    merged_data[norm_key][col] = val[col]
+        else:
+            merged_data[norm_key] = val
 
     try:
         with open(dashboard_csv, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
             writer.writerow(dashboard_headers)
             for key, val in merged_data.items():
-                row = list(key) + [val[col] for col in status_columns]
+                row = list(key) + [val.get(col, 0) for col in status_columns]
                 writer.writerow(row)
         print(f"  Successfully updated '{dashboard_csv}' with progress.")
     except Exception as csv_err:
@@ -581,6 +587,39 @@ def recover_to_category_page(page, context, auth_file, category, target_page, en
     return True
 
 
+def normalize_status_name(status_raw: str) -> str:
+    status_raw = status_raw.strip().upper()
+    predefined = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
+    if status_raw in predefined:
+        return predefined[status_raw]
+    
+    words = status_raw.split()
+    formatted_words = []
+    for w in words:
+        if w in ["BY", "OF", "IN", "FOR", "AND", "OR", "TO"]:
+            formatted_words.append(w.lower())
+        elif w in ["PPL", "PML", "SLS", "SBR", "BPS"]:
+            formatted_words.append(w)
+        else:
+            formatted_words.append(w.capitalize())
+            
+    if formatted_words:
+        formatted_words[0] = formatted_words[0].capitalize()
+        
+    return " ".join(formatted_words)
+
+
 def run_unified_scraper():
     use_test = "--test" in sys.argv
     email_file = os.path.join("data", "email_mitra_test.txt" if use_test else "email_mitra.txt")
@@ -684,14 +723,21 @@ def run_unified_scraper():
             except Exception as e:
                 print(f"Warning reading checkpoint: {e}. Starting fresh.")
 
-    status_columns = [
-        "OPEN",
-        "DRAFT",
-        "SUBMITTED BY Pencacah",
-        "REJECTED BY Pengawas",
-        "APPROVED BY Pengawas",
-        "REVOKED BY Pengawas",
-    ]
+    # Status mapping table
+    status_mapping = {
+        "OPEN": "OPEN",
+        "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
+        "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
+        "DRAFT": "DRAFT",
+        "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
+        "REJECTED BY ADMIN KABUPATEN": "REJECTED BY Admin Kabupaten",
+        "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT": "SUBMITTED RESPONDENT",
+        "COMPLETED BY ADMIN KABUPATEN": "COMPLETED BY Admin Kabupaten",
+        "EDITED BY ADMIN KABUPATEN": "EDITED BY Admin Kabupaten",
+    }
+
+    status_columns = list(status_mapping.values())
     dashboard_headers = ["Category", "Email", "SLS Code"] + status_columns
     scraped_data_dict = {}
 
@@ -845,15 +891,6 @@ def run_unified_scraper():
             print("\n--- Phase 2: Scraping Rekap Petugas ---")
             page.locator("button:has-text('Rekap Petugas')").click()
             _delay(page, 1500, (2500, 4000))
-
-            status_mapping = {
-                "OPEN": "OPEN",
-                "DRAFT": "DRAFT",
-                "SUBMITTED BY PENCACAH": "SUBMITTED BY Pencacah",
-                "REJECTED BY PENGAWAS": "REJECTED BY Pengawas",
-                "APPROVED BY PENGAWAS": "APPROVED BY Pengawas",
-                "REVOKED BY PENGAWAS": "REVOKED BY Pengawas",
-            }
 
             checkpoint_dashboard_file = "checkpoint_dashboard.json"
             resume_category = None
@@ -1057,13 +1094,23 @@ def run_unified_scraper():
                                 tag = tags.nth(k)
                                 spans = tag.locator("span")
                                 if spans.count() >= 2:
-                                    status_name = spans.nth(0).text_content().strip().upper()
+                                    status_raw = spans.nth(0).text_content().strip()
+                                    status_name = status_raw.upper()
                                     count_str = spans.nth(1).text_content().strip()
-                                    if status_name in status_mapping:
-                                        try:
-                                            scraped_data_dict[key][status_mapping[status_name]] = int(count_str)
-                                        except ValueError:
-                                            pass
+                                    
+                                    # Dynamic status check & registration
+                                    if status_name not in status_mapping:
+                                        norm_name = normalize_status_name(status_raw)
+                                        status_mapping[status_name] = norm_name
+                                        if norm_name not in status_columns:
+                                            status_columns.append(norm_name)
+                                            dashboard_headers = ["Category", "Email", "SLS Code"] + status_columns
+                                            print(f"  [DYNAMIC STATUS] Registered new status: '{norm_name}'")
+                                            
+                                    try:
+                                        scraped_data_dict[key][status_mapping[status_name]] = int(count_str)
+                                    except ValueError:
+                                        pass
 
                         # Tutup card setelah data diambil
                         if card.get_attribute("data-state") == "open":
@@ -1109,11 +1156,16 @@ def run_unified_scraper():
                         and not is_next_disabled(next_btn)
                         and prev_email
                     ):
+                        MAX_PAGINATION_RETRIES = 8
                         clicked_ok = False
-                        for attempt in range(5):
+                        for attempt in range(MAX_PAGINATION_RETRIES):
                             if attempt > 0:
-                                print(f"  Retrying next page click (attempt {attempt+1}/5)...")
-                                _delay(page, 1000, (1500, 2500))
+                                # Exponential backoff: 3s, 6s, 12s, 20s, 20s, ...
+                                backoff_ms = min(3000 * (2 ** (attempt - 1)), 20000)
+                                jitter_ms = random.randint(0, backoff_ms // 4)
+                                wait_ms = backoff_ms + jitter_ms
+                                print(f"  Retrying next page click (attempt {attempt+1}/{MAX_PAGINATION_RETRIES}, waiting {wait_ms}ms)...")
+                                page.wait_for_timeout(wait_ms)
 
                             try:
                                 pagination_container = get_active_pagination(page)
@@ -1121,10 +1173,10 @@ def run_unified_scraper():
                                     btn = pagination_container.locator(
                                         "a:has-text('Next'), button:has-text('Next')"
                                     ).first
-                                    if btn.count() > 0 and btn.is_visible():
-                                        btn.click(timeout=20000)
+                                    if btn.count() > 0 and btn.is_visible() and not is_next_disabled(btn):
+                                        btn.click(timeout=30000)
                                     else:
-                                        print("  Next button gone.")
+                                        print("  Next button gone or disabled.")
                                         break
                                 else:
                                     print("  Pagination container not found.")
@@ -1133,7 +1185,10 @@ def run_unified_scraper():
                                 print(f"  Click Next failed: {e}")
                                 continue
 
-                            changed = wait_for_content_change(page, prev_email, prev_pag_text, timeout=30.0)
+                            # Wait for network idle after clicking Next
+                            wait_for_network_idle(page, timeout_ms=30000)
+
+                            changed = wait_for_content_change(page, prev_email, prev_pag_text, timeout=60.0)
                             if changed:
                                 clicked_ok = True
                                 break
@@ -1145,8 +1200,20 @@ def run_unified_scraper():
                                     clicked_ok = True
                                 break
 
+                            # If content didn't change and no error, try reloading the page on later attempts
+                            if attempt >= 3:
+                                print(f"  Content still unchanged after {attempt+1} attempts. Reloading page and recovering...")
+                                try:
+                                    ok = recover_to_category_page(page, context, auth_file, category, page_num + 1, env, attempt=attempt)
+                                    if ok:
+                                        page_num += 1
+                                        clicked_ok = True
+                                        break
+                                except Exception as recover_err:
+                                    print(f"  Recovery during pagination retry failed: {recover_err}")
+
                         if not clicked_ok:
-                            print("  Warning: Pagination transition timeout. Breaking loop.")
+                            print(f"  Warning: Pagination transition failed after {MAX_PAGINATION_RETRIES} attempts. Breaking loop.")
                             break
 
                         page_num += 1
@@ -1216,7 +1283,7 @@ def run_unified_scraper():
                     writer = csv.writer(f)
                     writer.writerow(dashboard_headers)
                     for key, val in merged_data.items():
-                        row = list(key) + [val[col] for col in status_columns]
+                        row = list(key) + [val.get(col, 0) for col in status_columns]
                         writer.writerow(row)
                 print(f"Written {len(merged_data)} SLS rows to '{dashboard_csv}'.")
             except Exception as csv_err:

@@ -11,12 +11,16 @@ def main():
         return
         
     status_columns = [
-        "OPEN", 
-        "DRAFT", 
-        "SUBMITTED BY Pencacah", 
-        "REJECTED BY Pengawas", 
+        "OPEN",
         "APPROVED BY Pengawas",
-        "REVOKED BY Pengawas"
+        "SUBMITTED BY Pencacah",
+        "DRAFT",
+        "REJECTED BY Pengawas",
+        "REJECTED BY Admin Kabupaten",
+        "REVOKED BY Pengawas",
+        "SUBMITTED RESPONDENT",
+        "COMPLETED BY Admin Kabupaten",
+        "EDITED BY Admin Kabupaten",
     ]
     
     # Let's aggregate from detail_file
@@ -29,6 +33,10 @@ def main():
         "rejected by pengawas": "REJECTED BY Pengawas",
         "approved by pengawas": "APPROVED BY Pengawas",
         "revoked by pengawas": "REVOKED BY Pengawas",
+        "rejected by admin kabupaten": "REJECTED BY Admin Kabupaten",
+        "submitted respondent": "SUBMITTED RESPONDENT",
+        "completed by admin kabupaten": "COMPLETED BY Admin Kabupaten",
+        "edited by admin kabupaten": "EDITED BY Admin Kabupaten",
     }
     
     with open(detail_file, "r", encoding="utf-8") as f:
@@ -81,9 +89,9 @@ def main():
     original_dash = {}
     with open(dashboard_file, "r", encoding="utf-8") as f:
         reader = csv.reader(f)
-        header = next(reader)
+        header = [h.strip() for h in next(reader)]
         for row in reader:
-            if not row or len(row) < 9:
+            if not row or len(row) < len(header):
                 continue
             cat = row[0].strip()
             email = row[1].strip().lower()
@@ -91,12 +99,7 @@ def main():
             
             key = (cat, email, sls)
             original_dash[key] = {
-                "OPEN": int(row[3]),
-                "DRAFT": int(row[4]),
-                "SUBMITTED BY Pencacah": int(row[5]),
-                "REJECTED BY Pengawas": int(row[6]),
-                "APPROVED BY Pengawas": int(row[7]),
-                "REVOKED BY Pengawas": int(row[8])
+                col: int(row[header.index(col)]) for col in status_columns if col in header
             }
             
     print(f"Loaded {len(original_dash)} records from existing dashboard CSV.")
