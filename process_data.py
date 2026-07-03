@@ -71,11 +71,15 @@ def run_git_commands(timestamp_str):
             "scraped_data.csv",
             "update_data.csv",
             "dashboard_scraped_data.csv",
+            "dashboard_scraped_data_morning.csv",
+            "dashboard_scraped_data_evening.csv",
             os.path.join("data", "pml_ppl.csv"),
             os.path.join("data", "ringkasan_Assign.csv"),
             os.path.join("data", "ringkasan_Progres.csv"),
             os.path.join("dashboard", "public", "update_data.csv"),
             os.path.join("dashboard", "public", "dashboard_scraped_data.csv"),
+            os.path.join("dashboard", "public", "dashboard_scraped_data_morning.csv"),
+            os.path.join("dashboard", "public", "dashboard_scraped_data_evening.csv"),
             os.path.join("dashboard", "public", "pml_ppl.csv"),
             os.path.join("dashboard", "public", "koseka.csv"),
             os.path.join("dashboard", "public", "ringkasan_Assign.csv"),
@@ -106,6 +110,42 @@ def run_git_commands(timestamp_str):
         print("Git push completed successfully!")
     except Exception as e:
         print(f"Warning: Failed to execute Git commands: {e}")
+
+def save_snapshots_if_needed(public_dir=None):
+    if not public_dir:
+        public_dir = os.path.join("dashboard", "public")
+    
+    dashboard_scraped_src = "dashboard_scraped_data.csv"
+    if os.path.exists(dashboard_scraped_src):
+        morning_dest = "dashboard_scraped_data_morning.csv"
+        evening_dest = "dashboard_scraped_data_evening.csv"
+        
+        # WITA is UTC+8
+        now = datetime.now(wita_tz)
+        hour = now.hour
+        
+        # Ensure destination folder in dashboard/public exists
+        os.makedirs(public_dir, exist_ok=True)
+        
+        # Cutoff is 13:00 (1 PM WITA)
+        if hour < 13:
+            shutil.copy2(dashboard_scraped_src, morning_dest)
+            shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning.csv"))
+            print(f"Updated morning snapshot '{morning_dest}' (hour {hour})")
+        else:
+            shutil.copy2(dashboard_scraped_src, evening_dest)
+            shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_evening.csv"))
+            print(f"Updated evening snapshot '{evening_dest}' (hour {hour})")
+            
+        # Fallback initialization: if either file doesn't exist yet, populate it to avoid UI errors
+        if not os.path.exists(morning_dest):
+            shutil.copy2(dashboard_scraped_src, morning_dest)
+            shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning.csv"))
+            print(f"Initialized morning snapshot fallback")
+        if not os.path.exists(evening_dest):
+            shutil.copy2(dashboard_scraped_src, evening_dest)
+            shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_evening.csv"))
+            print(f"Initialized evening snapshot fallback")
 
 def load_priority_sls():
     priority_file = os.path.join("data", "kdsls_prioritas.txt")
@@ -433,11 +473,12 @@ def process_data():
             shutil.copy2(output_file, os.path.join(public_dir, "update_data.csv"))
             print(f"Copied '{output_file}' to dashboard public folder.")
             
-            # Copy dashboard_scraped_data.csv
+            # Copy dashboard_scraped_data.csv & handle snapshots
             dashboard_scraped_src = "dashboard_scraped_data.csv"
             if os.path.exists(dashboard_scraped_src):
                 shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data.csv"))
                 print(f"Copied '{dashboard_scraped_src}' to dashboard public folder.")
+                save_snapshots_if_needed(public_dir)
             
             # Copy PML PPL CSV
             pml_ppl_src = os.path.join("data", "pml_ppl.csv")

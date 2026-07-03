@@ -1297,6 +1297,7 @@ def run_unified_scraper():
                 public_dir = os.path.join("dashboard", "public")
                 if os.path.exists(public_dir):
                     shutil.copy2(dashboard_csv, os.path.join(public_dir, "dashboard_scraped_data.csv"))
+                    process_data.save_snapshots_if_needed(public_dir)
 
                     for src_name, dst_name in [
                         (os.path.join("data", "pml_ppl.csv"), "pml_ppl.csv"),

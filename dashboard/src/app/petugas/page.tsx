@@ -210,11 +210,16 @@ export default function PetugasPage() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string>("");
 
+  // Monitoring mode state
+  const [monitoringMode, setMonitoringMode] = useState<"realtime" | "pagi" | "sore">("realtime");
+  const [morningData, setMorningData] = useState<DashboardRecord[]>([]);
+  const [eveningData, setEveningData] = useState<DashboardRecord[]>([]);
+
   // Tabs and filters state
   const [activeTab, setActiveTab] = useState<"pcl" | "pml" | "kecamatan" | "prioritas">("pcl");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKec, setSelectedKec] = useState("all");
-  const [sortBy, setSortBy] = useState<"nama" | "realisasi_desc" | "realisasi_asc" | "pct_desc" | "pct_asc">("nama");
+  const [sortBy, setSortBy] = useState<"nama" | "realisasi_desc" | "realisasi_asc" | "pct_desc" | "pct_asc" | "progress_day_desc">("nama");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const bannerTargetInfo = useMemo(() => calculateTargetAndDiff(0), [lastUpdated]);
@@ -234,6 +239,28 @@ export default function PetugasPage() {
       const text = await response.text();
       const parsed = parseCSV(text);
       setRawData(parsed);
+
+      // Fetch morning data
+      try {
+        const morningResponse = await fetch("/dashboard_scraped_data_morning.csv");
+        if (morningResponse.ok) {
+          const morningText = await morningResponse.text();
+          setMorningData(parseCSV(morningText));
+        }
+      } catch (e) {
+        console.warn("Gagal memuat dashboard_scraped_data_morning.csv:", e);
+      }
+
+      // Fetch evening data
+      try {
+        const eveningResponse = await fetch("/dashboard_scraped_data_evening.csv");
+        if (eveningResponse.ok) {
+          const eveningText = await eveningResponse.text();
+          setEveningData(parseCSV(eveningText));
+        }
+      } catch (e) {
+        console.warn("Gagal memuat dashboard_scraped_data_evening.csv:", e);
+      }
 
       // Fetch last updated timestamp
       try {
@@ -256,6 +283,15 @@ export default function PetugasPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Automatically switch sorting when monitoring mode changes
+  useEffect(() => {
+    if (monitoringMode !== "realtime") {
+      setSortBy("progress_day_desc");
+    } else {
+      setSortBy("nama");
+    }
+  }, [monitoringMode]);
 
   // Simple Quote-Aware CSV Parser with Dynamic Header Mapping
   const parseCSV = (csvText: string): DashboardRecord[] => {
@@ -388,8 +424,8 @@ export default function PetugasPage() {
       .join(" ");
   };
 
-  // Aggregate stats by officer
-  const aggregatedStats = useMemo(() => {
+  // Helper to aggregate stats by officer
+  const aggregateOfficerStats = (data: DashboardRecord[]): OfficerStats[] => {
     const map: { 
       [email: string]: OfficerStats & { 
         kecSet?: Set<string>; 
@@ -397,7 +433,7 @@ export default function PetugasPage() {
       } 
     } = {};
 
-    rawData.forEach(record => {
+    data.forEach(record => {
       const email = record.email.toLowerCase().trim();
       if (!email) return;
 
@@ -519,9 +555,10 @@ export default function PetugasPage() {
 
       return officer;
     });
-  }, [rawData]);
+  };
 
-  const kecamatanStats = useMemo(() => {
+  // Helper to aggregate stats for Kecamatan
+  const aggregateKecamatanStats = (data: DashboardRecord[]): KecamatanStats[] => {
     const map: {
       [kecName: string]: {
         namaKec: string;
@@ -578,7 +615,7 @@ export default function PetugasPage() {
       };
     } = {};
 
-    rawData.forEach(record => {
+    data.forEach(record => {
       if (record.category.toLowerCase() !== "pengawas") return;
       const kec = record.namaKec || "-";
       const email = record.email.toLowerCase().trim();
@@ -691,7 +728,7 @@ export default function PetugasPage() {
       p.total += slsTotal;
       p.slsCount += 1;
       p.progress += slsProgress;
-      p.realisasi += slsRealisasiPml; // Kecamatan uses: submit + reject + approve + revoked
+      p.realisasi += slsRealisasiPml;
     });
 
     return Object.values(map).map(k => {
@@ -701,16 +738,10 @@ export default function PetugasPage() {
         pmlList: Object.values(pmlMap)
       };
     });
-  }, [rawData]);
+  };
 
-  // Unique Kecamatan List for filters
-  const subdistrictOptions = useMemo(() => {
-    const list = rawData.map(r => r.namaKec).filter(Boolean);
-    return Array.from(new Set(list)).sort();
-  }, [rawData]);
-
-  // Aggregate stats for SLS Prioritas
-  const prioritySLSStats = useMemo(() => {
+  // Helper to aggregate stats for SLS Prioritas
+  const aggregatePrioritySLSStats = (data: DashboardRecord[]) => {
     const map: { [slsCode: string]: {
       slsCode: string;
       namaKec: string;
@@ -741,7 +772,7 @@ export default function PetugasPage() {
       hasPengawasRecord: boolean;
     } } = {};
 
-    rawData.forEach(record => {
+    data.forEach(record => {
       if (record.isPrioritas !== "Ya") return;
       const code = record.slsCode;
       
@@ -833,6 +864,62 @@ export default function PetugasPage() {
     });
 
     return Object.values(map);
+  };
+
+  // Live aggregated stats
+  const aggregatedStats = useMemo(() => {
+    return aggregateOfficerStats(rawData);
+  }, [rawData]);
+
+  const kecamatanStats = useMemo(() => {
+    return aggregateKecamatanStats(rawData);
+  }, [rawData]);
+
+  const prioritySLSStats = useMemo(() => {
+    return aggregatePrioritySLSStats(rawData);
+  }, [rawData]);
+
+  // Baseline selection mapping
+  const baselineData = useMemo(() => {
+    if (monitoringMode === "pagi") return eveningData;
+    if (monitoringMode === "sore") return morningData;
+    return [];
+  }, [monitoringMode, morningData, eveningData]);
+
+  const baselineOfficerMap = useMemo(() => {
+    const map: { [email: string]: OfficerStats } = {};
+    if (!baselineData || baselineData.length === 0) return map;
+    const aggregated = aggregateOfficerStats(baselineData);
+    aggregated.forEach(o => {
+      map[o.email.toLowerCase().trim()] = o;
+    });
+    return map;
+  }, [baselineData]);
+
+  const baselinePrioritySLSMap = useMemo(() => {
+    const map: { [slsCode: string]: any } = {};
+    if (!baselineData || baselineData.length === 0) return map;
+    const aggregated = aggregatePrioritySLSStats(baselineData);
+    aggregated.forEach(s => {
+      map[s.slsCode] = s;
+    });
+    return map;
+  }, [baselineData]);
+
+  const baselineKecMap = useMemo(() => {
+    const map: { [kecName: string]: any } = {};
+    if (!baselineData || baselineData.length === 0) return map;
+    const aggregated = aggregateKecamatanStats(baselineData);
+    aggregated.forEach(k => {
+      map[k.namaKec] = k;
+    });
+    return map;
+  }, [baselineData]);
+
+  // Unique Kecamatan List for filters
+  const subdistrictOptions = useMemo(() => {
+    const list = rawData.map(r => r.namaKec).filter(Boolean);
+    return Array.from(new Set(list)).sort();
   }, [rawData]);
 
   // Filtered priority SLS list
@@ -879,10 +966,18 @@ export default function PetugasPage() {
         const pctB = b.total > 0 ? (b.realisasi / b.total) : 0;
         return pctA - pctB;
       });
+    } else if (sortBy === "progress_day_desc") {
+      return base.sort((a, b) => {
+        const baseA = baselinePrioritySLSMap[a.slsCode]?.realisasi || 0;
+        const baseB = baselinePrioritySLSMap[b.slsCode]?.realisasi || 0;
+        const diffA = a.realisasi - baseA;
+        const diffB = b.realisasi - baseB;
+        return diffB - diffA;
+      });
     }
 
     return base;
-  }, [prioritySLSStats, activeTab, selectedKec, searchQuery, sortBy]);
+  }, [prioritySLSStats, activeTab, selectedKec, searchQuery, sortBy, baselinePrioritySLSMap]);
 
   // Filtered officers list
   const filteredOfficers = useMemo(() => {
@@ -935,10 +1030,18 @@ export default function PetugasPage() {
         const pctB = b.total > 0 ? (b.realisasi / b.total) : 0;
         return pctA - pctB;
       });
+    } else if (sortBy === "progress_day_desc") {
+      return base.sort((a, b) => {
+        const baseA = baselineOfficerMap[a.email.toLowerCase().trim()]?.realisasi || 0;
+        const baseB = baselineOfficerMap[b.email.toLowerCase().trim()]?.realisasi || 0;
+        const diffA = a.realisasi - baseA;
+        const diffB = b.realisasi - baseB;
+        return diffB - diffA;
+      });
     }
 
     return base;
-  }, [aggregatedStats, activeTab, selectedKec, searchQuery, sortBy]);
+  }, [aggregatedStats, activeTab, selectedKec, searchQuery, sortBy, baselineOfficerMap]);
 
   // Filtered kecamatans list
   const filteredKecamatans = useMemo(() => {
@@ -984,10 +1087,18 @@ export default function PetugasPage() {
         const pctB = b.total > 0 ? (b.realisasi / b.total) : 0;
         return pctA - pctB;
       });
+    } else if (sortBy === "progress_day_desc") {
+      return base.sort((a, b) => {
+        const baseA = baselineKecMap[a.namaKec]?.realisasi || 0;
+        const baseB = baselineKecMap[b.namaKec]?.realisasi || 0;
+        const diffA = a.realisasi - baseA;
+        const diffB = b.realisasi - baseB;
+        return diffB - diffA;
+      });
     }
 
     return base;
-  }, [kecamatanStats, activeTab, selectedKec, searchQuery, sortBy]);
+  }, [kecamatanStats, activeTab, selectedKec, searchQuery, sortBy, baselineKecMap]);
 
   // Expand / collapse row handler
   const toggleRow = (email: string) => {
@@ -1275,6 +1386,64 @@ export default function PetugasPage() {
           </div>
         ) : (
           <>
+            {/* Monitoring Mode Selector */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 mb-6 shadow-sm">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-250 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-orange-500" />
+                    Mode Analisis Monitoring Progres Kerja Harian
+                  </h3>
+                  <p className="text-[11px] text-slate-700 dark:text-slate-350 font-medium mt-0.5">
+                    Pilih periode monitoring untuk membandingkan progres/tambahan hasil kerja petugas secara real-time.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto scrollbar-none pb-1 md:pb-0">
+                  <button
+                    onClick={() => setMonitoringMode("realtime")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                      monitoringMode === "realtime"
+                        ? "bg-slate-900 text-white dark:bg-slate-50 dark:text-slate-950 shadow-sm shadow-slate-900/10"
+                        : "bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    ⚡ Real-time (Total)
+                  </button>
+                  <button
+                    onClick={() => setMonitoringMode("pagi")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                      monitoringMode === "pagi"
+                        ? "bg-orange-500 text-white shadow-sm shadow-orange-500/10"
+                        : "bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    🌅 Pagi (vs Sore Kemarin)
+                  </button>
+                  <button
+                    onClick={() => setMonitoringMode("sore")}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                      monitoringMode === "sore"
+                        ? "bg-amber-600 text-white shadow-sm shadow-amber-600/10"
+                        : "bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    🌇 Sore (vs Pagi Ini)
+                  </button>
+                </div>
+              </div>
+              
+              {/* Optional Description Banner for selected Mode */}
+              {monitoringMode !== "realtime" && (
+                <div className="mt-3 p-3 rounded-xl bg-orange-500/5 dark:bg-orange-950/10 border border-orange-500/10 text-[11px] text-orange-600 dark:text-orange-400 font-medium">
+                  {monitoringMode === "pagi" ? (
+                    <span><strong>🌅 Mode Monitoring Pagi:</strong> Menampilkan tambahan progres kerja sejak kemarin sore (data saat ini dibandingkan dengan snapshot sore kemarin). Perubahan capaian akan ditandai dengan label hijau <span className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 ml-1">(+X)</span>.</span>
+                  ) : (
+                    <span><strong>🌇 Mode Monitoring Sore:</strong> Menampilkan tambahan progres kerja sepanjang hari ini (data saat ini dibandingkan dengan snapshot pagi tadi). Perubahan capaian akan ditandai dengan label hijau <span className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400 ml-1">(+X)</span>.</span>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* View Selection & Search Panel */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 mb-8 shadow-sm flex flex-col gap-4">
               
@@ -1424,6 +1593,9 @@ export default function PetugasPage() {
                         ? "Nama Kecamatan (A-Z)"
                         : "Nama Petugas (A-Z)"}
                     </option>
+                    {monitoringMode !== "realtime" && (
+                      <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="progress_day_desc">Progres Periode Terbanyak (+Jumlah)</option>
+                    )}
                     <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="realisasi_desc">Realisasi Terbesar (Jumlah)</option>
                     <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="realisasi_asc">Realisasi Terkecil (Jumlah)</option>
                     <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="pct_desc">Persentase Terbesar (%)</option>
@@ -1546,6 +1718,26 @@ export default function PetugasPage() {
                             rowColor = "bg-rose-500/5 dark:bg-rose-950/10";
                           }
 
+                          // Baseline values for deltas
+                          const baselineK = baselineKecMap[k.namaKec];
+                          const showDelta = monitoringMode !== "realtime";
+                          
+                          const diffOpen = baselineK ? (k.open_count - baselineK.open_count) : 0;
+                          const diffDraft = baselineK ? (k.draft_count - baselineK.draft_count) : 0;
+                          const diffSubmit = baselineK ? (k.submitted_pencacah - baselineK.submitted_pencacah) : 0;
+                          const diffSubmitResp = baselineK ? (k.submitted_respondent - baselineK.submitted_respondent) : 0;
+                          const diffReject = baselineK ? (k.rejected_pengawas - baselineK.rejected_pengawas) : 0;
+                          const diffRejectAdmin = baselineK ? (k.rejected_admin - baselineK.rejected_admin) : 0;
+                          const diffApprove = baselineK ? (k.approved_pengawas - baselineK.approved_pengawas) : 0;
+                          const diffComplete = baselineK ? (k.completed_admin - baselineK.completed_admin) : 0;
+                          const diffEdit = baselineK ? (k.edited_admin - baselineK.edited_admin) : 0;
+                          const diffRevoked = baselineK ? (k.revoked_pengawas - baselineK.revoked_pengawas) : 0;
+                          const diffProgress = baselineK ? (k.progress - baselineK.progress) : 0;
+                          const diffRealisasi = baselineK ? (k.realisasi - baselineK.realisasi) : 0;
+
+                          const baselinePct = baselineK && baselineK.total > 0 ? ((baselineK.realisasi / baselineK.total) * 100) : 0;
+                          const diffPct = showDelta ? (parseFloat(pctRealisasi) - baselinePct) : 0;
+
                           return (
                             <React.Fragment key={k.namaKec}>
                               {/* Kecamatan Summary Row */}
@@ -1569,18 +1761,81 @@ export default function PetugasPage() {
                                 <td className="py-3 px-4 font-normal">{k.pmlList.length} PML</td>
                                 <td className="py-3 px-4 text-center font-normal">{k.slsCount}</td>
                                 <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{k.total}</td>
-                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{k.open_count}</td>
-                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{k.draft_count}</td>
-                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{k.submitted_pencacah}</td>
-                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{k.submitted_respondent}</td>
-                                <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">{k.rejected_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">{k.rejected_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{k.approved_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{k.completed_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">{k.edited_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{k.revoked_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{k.progress}</td>
-                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{k.realisasi}</td>
+                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">
+                                  {k.open_count}
+                                  {showDelta && diffOpen < 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({diffOpen})</span>
+                                  )}
+                                  {showDelta && diffOpen > 0 && (
+                                    <span className="text-[10px] text-red-500 dark:text-red-400 font-bold ml-1">(+{diffOpen})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">
+                                  {k.draft_count}
+                                  {showDelta && diffDraft > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffDraft})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">
+                                  {k.submitted_pencacah}
+                                  {showDelta && diffSubmit > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmit})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">
+                                  {k.submitted_respondent}
+                                  {showDelta && diffSubmitResp > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmitResp})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">
+                                  {k.rejected_pengawas}
+                                  {showDelta && diffReject > 0 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffReject})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">
+                                  {k.rejected_admin}
+                                  {showDelta && diffRejectAdmin > 0 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffRejectAdmin})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">
+                                  {k.approved_pengawas}
+                                  {showDelta && diffApprove > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffApprove})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">
+                                  {k.completed_admin}
+                                  {showDelta && diffComplete > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffComplete})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">
+                                  {k.edited_admin}
+                                  {showDelta && diffEdit > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffEdit})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">
+                                  {k.revoked_pengawas}
+                                  {showDelta && diffRevoked > 0 && (
+                                    <span className="text-[10px] text-rose-500 dark:text-rose-400 font-bold ml-1">(+{diffRevoked})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                  {k.progress}
+                                  {showDelta && diffProgress > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffProgress})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                  {k.realisasi}
+                                  {showDelta && diffRealisasi > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffRealisasi})</span>
+                                  )}
+                                </td>
                                 <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-950 transition-colors">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
@@ -1592,6 +1847,11 @@ export default function PetugasPage() {
                                     }`}>
                                       {pctRealisasi}%
                                     </span>
+                                    {showDelta && diffPct > 0 && (
+                                      <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                                        +{diffPct.toFixed(2)}%
+                                      </span>
+                                    )}
                                     <span className={`text-[9px] font-bold ${
                                       targetInfo.isAboveTarget
                                         ? "text-emerald-600 dark:text-emerald-450"
@@ -1719,6 +1979,27 @@ export default function PetugasPage() {
                       ) : (
                         filteredPrioritySLS.map((item, index) => {
                           const pctRealisasi = item.total > 0 ? ((item.realisasi / item.total) * 100).toFixed(2) : "0.00";
+                          
+                          // Baseline values for deltas
+                          const baselineS = baselinePrioritySLSMap[item.slsCode];
+                          const showDelta = monitoringMode !== "realtime";
+                          
+                          const diffOpen = baselineS ? (item.open_count - baselineS.open_count) : 0;
+                          const diffDraft = baselineS ? (item.draft_count - baselineS.draft_count) : 0;
+                          const diffSubmit = baselineS ? (item.submitted_pencacah - baselineS.submitted_pencacah) : 0;
+                          const diffSubmitResp = baselineS ? (item.submitted_respondent - baselineS.submitted_respondent) : 0;
+                          const diffReject = baselineS ? (item.rejected_pengawas - baselineS.rejected_pengawas) : 0;
+                          const diffRejectAdmin = baselineS ? (item.rejected_admin - baselineS.rejected_admin) : 0;
+                          const diffApprove = baselineS ? (item.approved_pengawas - baselineS.approved_pengawas) : 0;
+                          const diffComplete = baselineS ? (item.completed_admin - baselineS.completed_admin) : 0;
+                          const diffEdit = baselineS ? (item.edited_admin - baselineS.edited_admin) : 0;
+                          const diffRevoked = baselineS ? (item.revoked_pengawas - baselineS.revoked_pengawas) : 0;
+                          const diffProgress = baselineS ? (item.progress - baselineS.progress) : 0;
+                          const diffRealisasi = baselineS ? (item.realisasi - baselineS.realisasi) : 0;
+
+                          const baselinePct = baselineS && baselineS.total > 0 ? ((baselineS.realisasi / baselineS.total) * 100) : 0;
+                          const diffPct = showDelta ? (parseFloat(pctRealisasi) - baselinePct) : 0;
+
                           return (
                             <tr
                               key={item.slsCode}
@@ -1743,22 +2024,92 @@ export default function PetugasPage() {
                                 {item.pengawas}
                               </td>
                               <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{item.total}</td>
-                              <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{item.open_count}</td>
-                              <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{item.draft_count}</td>
-                              <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{item.submitted_pencacah}</td>
-                              <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{item.submitted_respondent}</td>
-                              <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">{item.rejected_pengawas}</td>
-                              <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">{item.rejected_admin}</td>
-                              <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{item.approved_pengawas}</td>
-                              <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{item.completed_admin}</td>
-                              <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">{item.edited_admin}</td>
-                              <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{item.revoked_pengawas}</td>
-                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.progress}</td>
-                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{item.realisasi}</td>
+                              <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">
+                                {item.open_count}
+                                {showDelta && diffOpen < 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({diffOpen})</span>
+                                )}
+                                {showDelta && diffOpen > 0 && (
+                                  <span className="text-[10px] text-red-500 dark:text-red-400 font-bold ml-1">(+{diffOpen})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">
+                                {item.draft_count}
+                                {showDelta && diffDraft > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffDraft})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">
+                                {item.submitted_pencacah}
+                                {showDelta && diffSubmit > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmit})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">
+                                {item.submitted_respondent}
+                                {showDelta && diffSubmitResp > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmitResp})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-red-650 dark:text-red-500/90">
+                                {item.rejected_pengawas}
+                                {showDelta && diffReject > 0 && (
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffReject})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-red-600/80 dark:text-red-400/80">
+                                {item.rejected_admin}
+                                {showDelta && diffRejectAdmin > 0 && (
+                                  <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffRejectAdmin})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">
+                                {item.approved_pengawas}
+                                {showDelta && diffApprove > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffApprove})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">
+                                {item.completed_admin}
+                                {showDelta && diffComplete > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffComplete})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-emerald-600/70 dark:text-emerald-400/70">
+                                {item.edited_admin}
+                                {showDelta && diffEdit > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffEdit})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">
+                                {item.revoked_pengawas}
+                                {showDelta && diffRevoked > 0 && (
+                                  <span className="text-[10px] text-rose-500 dark:text-rose-400 font-bold ml-1">(+{diffRevoked})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                {item.progress}
+                                {showDelta && diffProgress > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffProgress})</span>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                {item.realisasi}
+                                {showDelta && diffRealisasi > 0 && (
+                                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffRealisasi})</span>
+                                )}
+                              </td>
                               <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-[#fffbf6] dark:bg-[#15100d] group-hover:bg-[#ffebd6] dark:group-hover:bg-[#281a10] transition-colors">
-                                <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs bg-orange-500/10 text-orange-600 dark:text-orange-500 border border-orange-500/20`}>
-                                  {pctRealisasi}%
-                                </span>
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs bg-orange-500/10 text-orange-600 dark:text-orange-500 border border-orange-500/20`}>
+                                    {pctRealisasi}%
+                                  </span>
+                                  {showDelta && diffPct > 0 && (
+                                    <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                                      +{diffPct.toFixed(2)}%
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1767,7 +2118,7 @@ export default function PetugasPage() {
                     ) : (
                       filteredOfficers.length === 0 ? (
                         <tr>
-                          <td colSpan={16} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
+                          <td colSpan={20} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
                             Tidak ada data petugas yang cocok dengan filter atau pencarian Anda.
                           </td>
                         </tr>
@@ -1783,6 +2134,26 @@ export default function PetugasPage() {
                           } else if (targetInfo.isBelowHalfTarget || isRed) {
                             rowColor = "bg-rose-500/5 dark:bg-rose-950/10";
                           }
+
+                          // Baseline values for deltas
+                          const baselineO = baselineOfficerMap[o.email.toLowerCase().trim()];
+                          const showDelta = monitoringMode !== "realtime";
+                          
+                          const diffOpen = baselineO ? (o.open_count - baselineO.open_count) : 0;
+                          const diffDraft = baselineO ? (o.draft_count - baselineO.draft_count) : 0;
+                          const diffSubmit = baselineO ? (o.submitted_pencacah - baselineO.submitted_pencacah) : 0;
+                          const diffSubmitResp = baselineO ? (o.submitted_respondent - baselineO.submitted_respondent) : 0;
+                          const diffReject = baselineO ? (o.rejected_pengawas - baselineO.rejected_pengawas) : 0;
+                          const diffRejectAdmin = baselineO ? (o.rejected_admin - baselineO.rejected_admin) : 0;
+                          const diffApprove = baselineO ? (o.approved_pengawas - baselineO.approved_pengawas) : 0;
+                          const diffComplete = baselineO ? (o.completed_admin - baselineO.completed_admin) : 0;
+                          const diffEdit = baselineO ? (o.edited_admin - baselineO.edited_admin) : 0;
+                          const diffRevoked = baselineO ? (o.revoked_pengawas - baselineO.revoked_pengawas) : 0;
+                          const diffProgress = baselineO ? (o.progress - baselineO.progress) : 0;
+                          const diffRealisasi = baselineO ? (o.realisasi - baselineO.realisasi) : 0;
+
+                          const baselinePct = baselineO && baselineO.total > 0 ? ((baselineO.realisasi / baselineO.total) * 100) : 0;
+                          const diffPct = showDelta ? (parseFloat(pctRealisasi) - baselinePct) : 0;
 
                           return (
                             <React.Fragment key={o.email}>
@@ -1802,25 +2173,88 @@ export default function PetugasPage() {
                                   {index + 1}
                                 </td>
                                 <td className="py-3 px-4 font-semibold">
-                                  <div className="font-semibold text-slate-900 dark:text-slate-100">{o.namaPetugas}</div>
+<div className="font-semibold text-slate-900 dark:text-slate-100">{o.namaPetugas}</div>
                                   <div className="text-[10px] text-slate-700 dark:text-slate-300 font-normal mt-0.5">{o.email}</div>
                                 </td>
                                 <td className="py-3 px-4 font-normal">{formatKecName(o.namaKec)}</td>
                                 <td className="py-3 px-4 font-normal">{o.koseka}</td>
                                 <td className="py-3 px-4 text-center font-normal">{o.slsList.length}</td>
                                 <td className="py-3 px-3 text-center font-semibold text-slate-800 dark:text-slate-200">{o.total}</td>
-                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">{o.open_count}</td>
-                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">{o.draft_count}</td>
-                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">{o.submitted_pencacah}</td>
-                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">{o.submitted_respondent}</td>
-                                <td className="py-3 px-3 text-center font-normal text-red-600 dark:text-red-500/90">{o.rejected_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-normal text-red-550/80 dark:text-red-400/80">{o.rejected_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">{o.approved_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">{o.completed_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-emerald-500/70 dark:text-emerald-400/70">{o.edited_admin}</td>
-                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">{o.revoked_pengawas}</td>
-                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{o.progress}</td>
-                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">{o.realisasi}</td>
+                                <td className="py-3 px-3 text-center font-normal text-amber-600 dark:text-amber-500/90">
+                                  {o.open_count}
+                                  {showDelta && diffOpen < 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">({diffOpen})</span>
+                                  )}
+                                  {showDelta && diffOpen > 0 && (
+                                    <span className="text-[10px] text-red-500 dark:text-red-400 font-bold ml-1">(+{diffOpen})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-blue-600 dark:text-blue-500/90">
+                                  {o.draft_count}
+                                  {showDelta && diffDraft > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffDraft})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-600 dark:text-teal-500/90">
+                                  {o.submitted_pencacah}
+                                  {showDelta && diffSubmit > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmit})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-teal-500/80 dark:text-teal-400/80">
+                                  {o.submitted_respondent}
+                                  {showDelta && diffSubmitResp > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffSubmitResp})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-red-600 dark:text-red-500/90">
+                                  {o.rejected_pengawas}
+                                  {showDelta && diffReject > 0 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffReject})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-red-550/80 dark:text-red-400/80">
+                                  {o.rejected_admin}
+                                  {showDelta && diffRejectAdmin > 0 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-500 font-bold ml-1">(+{diffRejectAdmin})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-600 dark:text-emerald-500/90">
+                                  {o.approved_pengawas}
+                                  {showDelta && diffApprove > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffApprove})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/80 dark:text-emerald-450/85">
+                                  {o.completed_admin}
+                                  {showDelta && diffComplete > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffComplete})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-emerald-500/70 dark:text-emerald-400/70">
+                                  {o.edited_admin}
+                                  {showDelta && diffEdit > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffEdit})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-normal text-rose-600 dark:text-rose-500/90">
+                                  {o.revoked_pengawas}
+                                  {showDelta && diffRevoked > 0 && (
+                                    <span className="text-[10px] text-rose-500 dark:text-rose-400 font-bold ml-1">(+{diffRevoked})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                  {o.progress}
+                                  {showDelta && diffProgress > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffProgress})</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-3 text-center font-semibold text-slate-700 dark:text-slate-300">
+                                  {o.realisasi}
+                                  {showDelta && diffRealisasi > 0 && (
+                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold ml-1">(+{diffRealisasi})</span>
+                                  )}
+                                </td>
                                 <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-950 transition-colors">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
@@ -1832,6 +2266,11 @@ export default function PetugasPage() {
                                     }`}>
                                       {pctRealisasi}%
                                     </span>
+                                    {showDelta && diffPct > 0 && (
+                                      <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                                        +{diffPct.toFixed(2)}%
+                                      </span>
+                                    )}
                                     <span className={`text-[9px] font-bold ${
                                       targetInfo.isAboveTarget
                                         ? "text-emerald-600 dark:text-emerald-450"
