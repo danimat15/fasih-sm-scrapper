@@ -896,7 +896,8 @@ export default function PetugasPage() {
       // Subdistrict filter
       if (selectedKec !== "all") {
         const targetKec = formatKecName(selectedKec).toLowerCase();
-        if (!off.namaKec.toLowerCase().includes(targetKec)) {
+        const kecList = off.namaKec.split("&").map(k => formatKecName(k.trim()).toLowerCase());
+        if (!kecList.includes(targetKec)) {
           return false;
         }
       }
