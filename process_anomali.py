@@ -194,6 +194,77 @@ def main():
             json.dump(detail_usaha, f, indent=2, ensure_ascii=False)
             
     print("Data processing finished successfully!")
+    
+    # Run automatic Git commands
+    run_git_commands()
+
+def run_git_commands():
+    import subprocess
+    from datetime import datetime, timezone, timedelta
+    
+    print("\n" + "="*50)
+    print("STARTING AUTOMATIC GIT PUSH FOR ANOMALY DATA")
+    print("="*50)
+    
+    try:
+        # Check if inside a git repo
+        git_check = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True, text=True)
+        if git_check.returncode != 0:
+            print("Warning: Not a Git repository or Git is not installed. Skipping push.")
+            return
+
+        # Files to add (both inputs in data/anomali and outputs in dashboard/public/anomali)
+        files_to_add = [
+            # Inputs
+            os.path.join("data", "anomali", "agregat_anomali_keluarga_per_kecamatan.xlsx"),
+            os.path.join("data", "anomali", "agregat_anomali_usaha_per_kecamatan.xlsx"),
+            os.path.join("data", "anomali", "anomali_keluarga.xlsx"),
+            os.path.join("data", "anomali", "anomali_usaha.xlsx"),
+            os.path.join("data", "anomali", "jenis_anomali_keluarga.txt"),
+            os.path.join("data", "anomali", "jenis_anomali_usaha.txt"),
+            # Outputs
+            os.path.join("dashboard", "public", "anomali", "jenis_keluarga.json"),
+            os.path.join("dashboard", "public", "anomali", "jenis_usaha.json"),
+            os.path.join("dashboard", "public", "anomali", "agregat_keluarga.json"),
+            os.path.join("dashboard", "public", "anomali", "agregat_usaha.json"),
+            os.path.join("dashboard", "public", "anomali", "detail_keluarga.json"),
+            os.path.join("dashboard", "public", "anomali", "detail_usaha.json")
+        ]
+        
+        # Check existing
+        existing_files = [f for f in files_to_add if os.path.exists(f)]
+        if not existing_files:
+            print("No anomaly files found to commit.")
+            return
+            
+        # Git add
+        print(f"Staging {len(existing_files)} anomaly files to git...")
+        subprocess.run(["git", "add"] + existing_files, check=True)
+        
+        # Check if there are changes
+        status_check = subprocess.run(["git", "diff", "--cached", "--quiet"])
+        if status_check.returncode == 0:
+            print("No changes detected in anomaly files. Skipping git commit/push.")
+            return
+            
+        # Timestamp (WITA: UTC+8)
+        wita_tz = timezone(timedelta(hours=8))
+        now = datetime.now(wita_tz)
+        months = {
+            1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
+            7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+        }
+        timestamp_str = f"{now.day} {months[now.month]} {now.year} pukul {now.strftime('%H.%M')} WITA"
+        
+        commit_msg = f"Update data anomali: {timestamp_str}"
+        print(f"Committing changes with message: '{commit_msg}'...")
+        subprocess.run(["git", "commit", "-m", commit_msg], check=True)
+        
+        print("Pushing to GitHub...")
+        subprocess.run(["git", "push"], check=True)
+        print("Git push completed successfully!")
+    except Exception as e:
+        print(f"Warning: Failed to execute Git commands: {e}")
 
 if __name__ == "__main__":
     main()
