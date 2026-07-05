@@ -292,10 +292,8 @@ def process_dashboard_scraped_data(priority_sls=None):
         print(f"Error processing dashboard scraped data: {e}")
         return False
 
-def process_data():
-    scraped_file = "scraped_data.csv"
+def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_file="update_data.csv"):
     koseka_file = os.path.join("data", "koseka.csv")
-    output_file = "update_data.csv"
     
     print("\n" + "="*50)
     print("STARTING DATA PROCESSING PIPELINE")
@@ -311,6 +309,38 @@ def process_data():
         
     # Load priority SLS codes
     priority_sls = load_priority_sls()
+
+    # Determine completed emails
+    if completed_emails is None:
+        checkpoint_file = "checkpoint.json"
+        if os.path.exists(checkpoint_file):
+            try:
+                import json
+                with open(checkpoint_file, "r") as f:
+                    cp = json.load(f)
+                    completed_emails = cp.get("completed_emails", [])
+            except Exception as e:
+                print(f"Warning loading checkpoint in process_data: {e}")
+        
+        if not completed_emails and os.path.exists(scraped_file):
+            try:
+                with open(scraped_file, "r", encoding="utf-8") as f:
+                    reader = csv.reader(f)
+                    header = next(reader, None)
+                    if header and "Searched Email" in header:
+                        email_idx = header.index("Searched Email")
+                        unique_emails = set()
+                        for row in reader:
+                            if row and len(row) > email_idx:
+                                email_val = row[email_idx].strip()
+                                if email_val:
+                                    unique_emails.add(email_val.lower())
+                        completed_emails = list(unique_emails)
+                        print(f"Detected {len(completed_emails)} unique completed emails from '{scraped_file}'.")
+            except Exception as e:
+                print(f"Warning scanning scraped_data.csv for emails: {e}")
+
+    completed_emails_lower = {email.strip().lower() for email in completed_emails} if completed_emails else set()
 
     # 1. Load subdistrict and Koseka mapping
     print(f"Loading subdistrict and Koseka mapping from '{koseka_file}'...")
@@ -339,6 +369,7 @@ def process_data():
         existing_data = {}
         headers = []
         id_code_idx = 1
+        searched_email_idx = 0
         
         if os.path.exists(output_file):
             print(f"Found existing '{output_file}'. Loading data for merging...")
@@ -349,6 +380,8 @@ def process_data():
                         headers = next(reader)
                         if 'Kode Identitas' in headers:
                             id_code_idx = headers.index('Kode Identitas')
+                        if 'Searched Email' in headers:
+                            searched_email_idx = headers.index('Searched Email')
                     except StopIteration:
                         headers = []
                     
@@ -364,6 +397,20 @@ def process_data():
             except Exception as e:
                 print(f"Warning: Could not read existing output file for merging: {e}")
         
+        # Remove existing data for completed emails (reset/overwrite behavior)
+        if completed_emails_lower:
+            filtered_existing_data = {}
+            removed_count = 0
+            for id_code, row in existing_data.items():
+                if len(row) > searched_email_idx:
+                    searched_email = row[searched_email_idx].strip().lower()
+                    if searched_email in completed_emails_lower:
+                        removed_count += 1
+                        continue
+                filtered_existing_data[id_code] = row
+            existing_data = filtered_existing_data
+            print(f"Removed {removed_count} old records for {len(completed_emails_lower)} completed/scraped emails.")
+
         # Read new scraped data
         with open(scraped_file, mode='r', encoding='utf-8') as infile:
             reader = csv.reader(infile)
@@ -374,6 +421,10 @@ def process_data():
                     new_id_code_idx = new_headers.index('Kode Identitas')
                 else:
                     new_id_code_idx = 1
+                
+                new_email_idx = 0
+                if 'Searched Email' in new_headers:
+                    new_email_idx = new_headers.index('Searched Email')
             except StopIteration:
                 print("Error: scraped_data.csv is empty.")
                 return False
@@ -387,6 +438,12 @@ def process_data():
                 id_code = row[new_id_code_idx].strip()
                 if not id_code:
                     continue  # Skip empty/invalid identity codes
+                
+                # Check if this row belongs to a completed email. If not, skip it!
+                if completed_emails_lower:
+                    row_email = row[new_email_idx].strip().lower()
+                    if row_email not in completed_emails_lower:
+                        continue
                 
                 if len(row) > 7:
                     row[7] = normalize_scale(row[7])

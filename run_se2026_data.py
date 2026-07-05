@@ -561,7 +561,7 @@ def run_data_scraper():
         # Run final data processing pipeline
         print("\nRunning final data processing pipeline...")
         try:
-            process_data.process_data()
+            process_data.process_data(completed_emails=completed_emails)
         except Exception as proc_err:
             print(f"Warning: Error during final data processing: {proc_err}")
 

@@ -486,7 +486,7 @@ def run_scraper(use_test_emails=False):
         # Run the data processing pipeline (which maps subdistricts, copies to dashboard, writes timestamp, and pushes to Git)
         try:
             import process_data
-            process_data.process_data()
+            process_data.process_data(completed_emails=completed_emails)
         except Exception as proc_err:
             print(f"Warning: Error during post-scrape data processing: {proc_err}")
 

@@ -279,7 +279,7 @@ def navigate_to_dashboard_page(page, target_page):
     return True
 
 
-def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, new_data):
+def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, new_data, completed_emails=None):
     if not new_data:
         return
 
@@ -303,6 +303,10 @@ def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, ne
                         category = row[cat_idx].strip()
                         email = row[email_idx].strip().lower()
                         sls_code = row[sls_idx].strip()
+
+                        # Skip loading old records for emails that were successfully scraped in this run
+                        if completed_emails and (category, email) in completed_emails:
+                            continue
 
                         status_counts = {}
                         for col in status_columns:
@@ -895,6 +899,7 @@ def run_unified_scraper():
             checkpoint_dashboard_file = "checkpoint_dashboard.json"
             resume_category = None
             resume_page = 1
+            completed_dashboard_emails = set()
 
             use_fresh = "--fresh" in sys.argv
             if not use_fresh and os.path.exists(checkpoint_dashboard_file):
@@ -903,7 +908,10 @@ def run_unified_scraper():
                         cp = json.load(f)
                         resume_category = cp.get("category")
                         resume_page = cp.get("page_num", 1)
+                        completed_list = cp.get("completed_emails", [])
+                        completed_dashboard_emails = {tuple(x) for x in completed_list}
                         print(f"Resuming from checkpoint: Category '{resume_category}', Page {resume_page}")
+                        print(f"Loaded {len(completed_dashboard_emails)} completed dashboard emails from checkpoint.")
                 except Exception as e:
                     print(f"Warning reading dashboard checkpoint: {e}. Starting fresh.")
 
@@ -969,7 +977,11 @@ def run_unified_scraper():
                     # Save checkpoint
                     try:
                         with open(checkpoint_dashboard_file, "w") as f:
-                            json.dump({"category": category, "page_num": page_num}, f)
+                            json.dump({
+                                "category": category,
+                                "page_num": page_num,
+                                "completed_emails": list(completed_dashboard_emails)
+                            }, f)
                     except Exception as e:
                         print(f"Warning saving checkpoint: {e}")
 
@@ -1112,6 +1124,9 @@ def run_unified_scraper():
                                     except ValueError:
                                         pass
 
+                        # Mark email as successfully completed in dashboard scraping
+                        completed_dashboard_emails.add((category, email.lower()))
+
                         # Tutup card setelah data diambil
                         if card.get_attribute("data-state") == "open":
                             card.click()
@@ -1139,7 +1154,7 @@ def run_unified_scraper():
 
                     # Save progress after finishing this page
                     print(f"  [Page {page_num}] Saving progress to CSV...")
-                    save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, scraped_data_dict)
+                    save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, scraped_data_dict, completed_dashboard_emails)
 
                     # Pagination
                     pagination_container = get_active_pagination(page)
@@ -1254,6 +1269,10 @@ def run_unified_scraper():
                                     email = row[email_idx].strip().lower()
                                     sls_code = row[sls_idx].strip()
 
+                                    # Skip loading old records for emails that were successfully scraped in this run
+                                    if completed_dashboard_emails and (category, email) in completed_dashboard_emails:
+                                        continue
+
                                     status_counts = {}
                                     for col in status_columns:
                                         try:
@@ -1264,7 +1283,7 @@ def run_unified_scraper():
                                         status_counts[col] = val
 
                                     merged_data[(category, email, sls_code)] = status_counts
-                        print(f"Loaded {len(merged_data)} existing SLS records.")
+                        print(f"Loaded {len(merged_data)} existing SLS records (after filtering).")
                     except Exception as e:
                         print(f"Warning: Could not read existing dashboard CSV: {e}")
 
@@ -1500,7 +1519,7 @@ def run_unified_scraper():
         if run_mode in ["full", "data"]:
             print("\nRunning final data processing pipeline...")
             try:
-                process_data.process_data()
+                process_data.process_data(completed_emails=completed_emails)
             except Exception as proc_err:
                 print(f"Warning: Error during final data processing: {proc_err}")
 
