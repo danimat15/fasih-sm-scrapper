@@ -251,11 +251,15 @@ export default function DashboardPage() {
   const [totalPrelistSummary, setTotalPrelistSummary] = useState<number>(0);
   const [summaryStatusCounts, setSummaryStatusCounts] = useState({
     open: 0,
-    submit: 0,
     approve: 0,
+    submit: 0,
     draft: 0,
     reject: 0,
-    revoked: 0
+    rejectAdmin: 0,
+    revoked: 0,
+    submitResp: 0,
+    completedAdmin: 0,
+    editedAdmin: 0
   });
 
   // Filter & Search states
@@ -355,29 +359,39 @@ export default function DashboardPage() {
             
             const revokedIdx = headers.indexOf("REVOKED BY PENGAWAS");
             
-            let openVal = 0, submitVal = 0, draftVal = 0, rejectVal = 0, approveVal = 0, revokedVal = 0;
+            let openVal = 0;
+            let approveVal = 0;
+            let submitVal = 0;
+            let draftVal = 0;
+            let rejectVal = 0;
+            let rejectAdminVal = 0;
+            let revokedVal = 0;
+            let submitRespVal = 0;
+            let completedAdminVal = 0;
+            let editedAdminVal = 0;
+
             if (openIdx !== -1) openVal = parseInt(values[openIdx]) || 0;
             if (draftIdx !== -1) draftVal = parseInt(values[draftIdx]) || 0;
-            
-            if (submitIdx !== -1) submitVal += parseInt(values[submitIdx]) || 0;
-            if (submitRespIdx !== -1) submitVal += parseInt(values[submitRespIdx]) || 0;
-            
-            if (rejectIdx !== -1) rejectVal += parseInt(values[rejectIdx]) || 0;
-            if (rejectAdminIdx !== -1) rejectVal += parseInt(values[rejectAdminIdx]) || 0;
-            
-            if (approveIdx !== -1) approveVal += parseInt(values[approveIdx]) || 0;
-            if (completedAdminIdx !== -1) approveVal += parseInt(values[completedAdminIdx]) || 0;
-            if (editedAdminIdx !== -1) approveVal += parseInt(values[editedAdminIdx]) || 0;
-            
+            if (submitIdx !== -1) submitVal = parseInt(values[submitIdx]) || 0;
+            if (submitRespIdx !== -1) submitRespVal = parseInt(values[submitRespIdx]) || 0;
+            if (rejectIdx !== -1) rejectVal = parseInt(values[rejectIdx]) || 0;
+            if (rejectAdminIdx !== -1) rejectAdminVal = parseInt(values[rejectAdminIdx]) || 0;
+            if (approveIdx !== -1) approveVal = parseInt(values[approveIdx]) || 0;
+            if (completedAdminIdx !== -1) completedAdminVal = parseInt(values[completedAdminIdx]) || 0;
+            if (editedAdminIdx !== -1) editedAdminVal = parseInt(values[editedAdminIdx]) || 0;
             if (revokedIdx !== -1) revokedVal = parseInt(values[revokedIdx]) || 0;
             
             setSummaryStatusCounts({
               open: openVal,
+              approve: approveVal,
               submit: submitVal,
               draft: draftVal,
               reject: rejectVal,
-              approve: approveVal,
-              revoked: revokedVal
+              rejectAdmin: rejectAdminVal,
+              revoked: revokedVal,
+              submitResp: submitRespVal,
+              completedAdmin: completedAdminVal,
+              editedAdmin: editedAdminVal
             });
           }
         }
@@ -501,11 +515,15 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     const total = rawData.length;
     let openCount = 0;
-    let draftCount = 0;
+    let approveCount = 0;
     let submitCount = 0;
+    let draftCount = 0;
     let rejectCount = 0;
-    let approvedCount = 0;
+    let rejectAdminCount = 0;
     let revokedCount = 0;
+    let submitRespCount = 0;
+    let completedAdminCount = 0;
+    let editedAdminCount = 0;
     let emptyCount = 0;
 
     rawData.forEach(r => {
@@ -514,12 +532,20 @@ export default function DashboardPage() {
         openCount++;
       } else if (s === "draft") {
         draftCount++;
-      } else if (s === "submitted by pencacah" || s === "submit" || s === "submitted" || s === "submitted respondent") {
+      } else if (s === "submitted by pencacah" || s === "submit" || s === "submitted") {
         submitCount++;
-      } else if (s === "rejected by pengawas" || s === "reject" || s === "rejected" || s === "rejected by admin kabupaten") {
+      } else if (s === "submitted respondent") {
+        submitRespCount++;
+      } else if (s === "rejected by pengawas" || s === "reject" || s === "rejected") {
         rejectCount++;
-      } else if (s === "approved by pengawas" || s === "approve" || s === "approved" || s === "completed by admin kabupaten" || s === "edited by admin kabupaten") {
-        approvedCount++;
+      } else if (s === "rejected by admin kabupaten") {
+        rejectAdminCount++;
+      } else if (s === "approved by pengawas" || s === "approve" || s === "approved") {
+        approveCount++;
+      } else if (s === "completed by admin kabupaten") {
+        completedAdminCount++;
+      } else if (s === "edited by admin kabupaten") {
+        editedAdminCount++;
       } else if (s === "revoked by pengawas" || s === "revoked") {
         revokedCount++;
       } else if (s === "kosong" || s === "") {
@@ -527,18 +553,22 @@ export default function DashboardPage() {
       }
     });
 
-    const otherCount = submitCount + rejectCount + approvedCount + revokedCount;
+    const otherCount = submitCount + submitRespCount + rejectCount + rejectAdminCount + approveCount + completedAdminCount + editedAdminCount + revokedCount;
     const completionRate = total > 0 ? (otherCount / total) * 100 : 0;
     const activeOfficers = new Set(rawData.map(r => r.officer).filter(Boolean)).size;
 
     return {
       total,
       openCount,
-      draftCount,
+      approveCount,
       submitCount,
+      draftCount,
       rejectCount,
-      approvedCount,
+      rejectAdminCount,
       revokedCount,
+      submitRespCount,
+      completedAdminCount,
+      editedAdminCount,
       emptyCount,
       otherCount,
       completionRate,
@@ -547,24 +577,50 @@ export default function DashboardPage() {
   }, [rawData]);
 
   // Derived display stats that fall back to dynamic rawData-based stats
-  const { displayTotal, displayOpen, displaySubmit, displayApprove, displayDraft, displayReject, displayRealisasi, displayRealisasiFasih } = useMemo(() => {
+  const { 
+    displayTotal, 
+    displayOpen, 
+    displayApprove, 
+    displaySubmit, 
+    displayDraft, 
+    displayReject, 
+    displayRejectAdmin, 
+    displayRevoked, 
+    displaySubmitResp, 
+    displayCompletedAdmin, 
+    displayEditedAdmin, 
+    displayRealisasi, 
+    displayRealisasiFasih 
+  } = useMemo(() => {
     const dTotal = totalPrelistSummary || stats.total;
     const dOpen = summaryStatusCounts.open || stats.openCount;
+    const dApprove = summaryStatusCounts.approve || stats.approveCount;
     const dSubmit = summaryStatusCounts.submit || stats.submitCount;
-    const dApprove = summaryStatusCounts.approve || stats.approvedCount;
     const dDraft = summaryStatusCounts.draft || stats.draftCount;
     const dReject = summaryStatusCounts.reject || stats.rejectCount;
+    const dRejectAdmin = summaryStatusCounts.rejectAdmin || stats.rejectAdminCount;
     const dRevoked = summaryStatusCounts.revoked || stats.revokedCount;
+    const dSubmitResp = summaryStatusCounts.submitResp || stats.submitRespCount;
+    const dCompletedAdmin = summaryStatusCounts.completedAdmin || stats.completedAdminCount;
+    const dEditedAdmin = summaryStatusCounts.editedAdmin || stats.editedAdminCount;
+
+    const realisasiSum = dDraft + dApprove + dSubmit + dReject + dRejectAdmin + dRevoked + dSubmitResp + dCompletedAdmin + dEditedAdmin;
+    const realisasiFasihSum = dApprove + dSubmit + dReject + dRejectAdmin + dRevoked + dSubmitResp + dCompletedAdmin + dEditedAdmin;
 
     return {
       displayTotal: dTotal,
       displayOpen: dOpen,
-      displaySubmit: dSubmit,
       displayApprove: dApprove,
+      displaySubmit: dSubmit,
       displayDraft: dDraft,
       displayReject: dReject,
-      displayRealisasi: dDraft + dSubmit + dApprove + dReject + dRevoked,
-      displayRealisasiFasih: dSubmit + dApprove + dReject + dRevoked
+      displayRejectAdmin: dRejectAdmin,
+      displayRevoked: dRevoked,
+      displaySubmitResp: dSubmitResp,
+      displayCompletedAdmin: dCompletedAdmin,
+      displayEditedAdmin: dEditedAdmin,
+      displayRealisasi: realisasiSum,
+      displayRealisasiFasih: realisasiFasihSum
     };
   }, [totalPrelistSummary, summaryStatusCounts, stats]);
 
@@ -878,11 +934,46 @@ export default function DashboardPage() {
           Rejected by Pengawas
         </span>
       );
+    } else if (s === "rejected by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-500 border border-rose-500/20">
+          <XCircle className="w-3.5 h-3.5" />
+          Rejected by Admin Kabupaten
+        </span>
+      );
     } else if (s === "approved by pengawas" || s === "approve" || s === "approved") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Approved by Pengawas
+        </span>
+      );
+    } else if (s === "completed by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-500 border border-indigo-500/20">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Completed by Admin Kabupaten
+        </span>
+      );
+    } else if (s === "edited by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-500 border border-violet-500/20">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Edited by Admin Kabupaten
+        </span>
+      );
+    } else if (s === "submitted respondent") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-500 border border-cyan-500/20">
+          <Send className="w-3.5 h-3.5" />
+          Submitted Respondent
+        </span>
+      );
+    } else if (s === "revoked by pengawas" || s === "revoked") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+          <AlertCircle className="w-3.5 h-3.5" />
+          Revoked by Pengawas
         </span>
       );
     } else if (s === "kosong" || s === "") {
@@ -1200,32 +1291,12 @@ export default function DashboardPage() {
                   <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayOpen / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
                 </div>
               </motion.div>
- 
-              {/* Status Submitted by Pencacah */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.12 }}
-                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
-              >
-                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
-                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Submitted by Pencacah</span>
-                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-teal-600 dark:text-teal-500">
-                  {displaySubmit.toLocaleString("id-ID")}
-                </span>
-                <div className="flex items-center justify-between mt-3 gap-2">
-                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-teal-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displaySubmit / displayTotal) * 100 : 0}%` }}></div>
-                  </div>
-                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displaySubmit / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
-                </div>
-              </motion.div>
- 
+
               {/* Status Approved by Pengawas */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.15 }}
+                transition={{ duration: 0.3, delay: 0.12 }}
                 className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
               >
                 <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
@@ -1240,7 +1311,27 @@ export default function DashboardPage() {
                   <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayApprove / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
                 </div>
               </motion.div>
- 
+
+              {/* Status Submitted by Pencacah */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Submitted by Pencacah</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-teal-600 dark:text-teal-500">
+                  {displaySubmit.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-teal-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displaySubmit / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displaySubmit / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
+
               {/* Status Draft */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -1260,7 +1351,7 @@ export default function DashboardPage() {
                   <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayDraft / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
                 </div>
               </motion.div>
- 
+
               {/* Status Rejected by Pengawas */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -1280,7 +1371,106 @@ export default function DashboardPage() {
                   <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayReject / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
                 </div>
               </motion.div>
- 
+
+              {/* Status Rejected by Admin Kabupaten */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.24 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Rejected by Admin Kabupaten</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-rose-600 dark:text-rose-500">
+                  {displayRejectAdmin.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-rose-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displayRejectAdmin / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayRejectAdmin / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
+
+              {/* Status Revoked by Pengawas */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.27 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Revoked by Pengawas</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-purple-650 dark:text-purple-500">
+                  {displayRevoked.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-purple-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displayRevoked / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayRevoked / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
+
+              {/* Status Submitted Respondent */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.30 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Submitted Respondent</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-cyan-600 dark:text-cyan-500">
+                  {displaySubmitResp.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-cyan-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displaySubmitResp / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displaySubmitResp / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
+
+              {/* Status Completed by Admin Kabupaten */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.33 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Completed by Admin Kabupaten</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-indigo-650 dark:text-indigo-500">
+                  {displayCompletedAdmin.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displayCompletedAdmin / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayCompletedAdmin / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
+
+              {/* Status Edited by Admin Kabupaten */}
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.36 }}
+                className="bg-white dark:bg-slate-900 p-3 sm:p-5 md:p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group hover:border-orange-500/30 transition-all duration-300"
+              >
+                <div className="absolute right-0 top-0 translate-x-3 -translate-y-3 w-24 h-24 rounded-full bg-slate-100 dark:bg-slate-800/40 group-hover:bg-orange-500/5 transition-colors duration-300"></div>
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-semibold block uppercase tracking-wider">Edited by Admin Kabupaten</span>
+                <span className="text-lg sm:text-2xl md:text-3xl font-extrabold mt-2 block text-violet-650 dark:text-violet-500">
+                  {displayEditedAdmin.toLocaleString("id-ID")}
+                </span>
+                <div className="flex items-center justify-between mt-3 gap-2">
+                  <div className="flex-1 bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-violet-500 h-full rounded-full" style={{ width: `${displayTotal > 0 ? (displayEditedAdmin / displayTotal) * 100 : 0}%` }}></div>
+                  </div>
+                  <span className="text-[10px] sm:text-xs md:text-sm font-extrabold text-slate-700 dark:text-slate-200 whitespace-nowrap">{displayTotal > 0 ? ((displayEditedAdmin / displayTotal) * 100).toFixed(2) : "0.00"}%</span>
+                </div>
+              </motion.div>
             </div>
 
             {/* Kecamatan Realization Ranking Card */}
@@ -1595,6 +1785,11 @@ export default function DashboardPage() {
                         else if (s.toLowerCase() === "submitted by pencacah") label = "Submitted by Pencacah";
                         else if (s.toLowerCase() === "rejected by pengawas") label = "Rejected by Pengawas";
                         else if (s.toLowerCase() === "approved by pengawas") label = "Approved by Pengawas";
+                        else if (s.toLowerCase() === "revoked by pengawas" || s.toLowerCase() === "revoked") label = "Revoked by Pengawas";
+                        else if (s.toLowerCase() === "rejected by admin kabupaten") label = "Rejected by Admin Kabupaten";
+                        else if (s.toLowerCase() === "submitted respondent") label = "Submitted Respondent";
+                        else if (s.toLowerCase() === "completed by admin kabupaten") label = "Completed by Admin Kabupaten";
+                        else if (s.toLowerCase() === "edited by admin kabupaten") label = "Edited by Admin Kabupaten";
                         return (
                           <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" key={idx} value={s}>{label}</option>
                         );

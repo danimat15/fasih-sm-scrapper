@@ -294,11 +294,10 @@ export default function ComparisonSBRPage() {
         const s = r.scale.toUpperCase().trim();
         const status = r.status ? r.status.toLowerCase().trim() : "";
 
-        // Only count if status is submit, approve, reject, or revoke
         const isFocusedStatus =
-          status === "submitted by pencacah" || status === "submit" || status === "submitted" ||
-          status === "approved by pengawas" || status === "approve" || status === "approved" ||
-          status === "rejected by pengawas" || status === "reject" || status === "rejected" ||
+          status === "submitted by pencacah" || status === "submit" || status === "submitted" || status === "submitted respondent" ||
+          status === "approved by pengawas" || status === "approve" || status === "approved" || status === "completed by admin kabupaten" || status === "edited by admin kabupaten" ||
+          status === "rejected by pengawas" || status === "reject" || status === "rejected" || status === "rejected by admin kabupaten" ||
           status === "revoked by pengawas" || status === "revoke" || status === "revoked";
 
         // Increment target prelist count

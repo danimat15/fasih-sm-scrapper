@@ -309,6 +309,16 @@ export default function UsahaPage() {
         statusMap["rejected"] = "Rejected by Pengawas";
       } else if (s === "approved by pengawas" || s === "approve" || s === "approved") {
         statusMap["approved"] = "Approved by Pengawas";
+      } else if (s === "revoked by pengawas" || s === "revoked") {
+        statusMap["revoked"] = "Revoked by Pengawas";
+      } else if (s === "rejected by admin kabupaten") {
+        statusMap["rejected_admin"] = "Rejected by Admin Kabupaten";
+      } else if (s === "submitted respondent") {
+        statusMap["submitted_respondent"] = "Submitted Respondent";
+      } else if (s === "completed by admin kabupaten") {
+        statusMap["completed_admin"] = "Completed by Admin Kabupaten";
+      } else if (s === "edited by admin kabupaten") {
+        statusMap["edited_admin"] = "Edited by Admin Kabupaten";
       } else {
         statusMap[s] = r.status;
       }
@@ -492,6 +502,11 @@ export default function UsahaPage() {
         else if (s === "submitted by pencacah" || s === "submit" || s === "submitted") statusKey = "submitted";
         else if (s === "rejected by pengawas" || s === "reject" || s === "rejected") statusKey = "rejected";
         else if (s === "approved by pengawas" || s === "approve" || s === "approved") statusKey = "approved";
+        else if (s === "revoked by pengawas" || s === "revoked") statusKey = "revoked";
+        else if (s === "rejected by admin kabupaten") statusKey = "rejected_admin";
+        else if (s === "submitted respondent") statusKey = "submitted_respondent";
+        else if (s === "completed by admin kabupaten") statusKey = "completed_admin";
+        else if (s === "edited by admin kabupaten") statusKey = "edited_admin";
         if (statusKey !== selectedStatus) return false;
       }
 
@@ -656,11 +671,46 @@ export default function UsahaPage() {
           Rejected by Pengawas
         </span>
       );
+    } else if (s === "rejected by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-500 border border-rose-500/20">
+          <XCircle className="w-3.5 h-3.5" />
+          Rejected by Admin Kabupaten
+        </span>
+      );
     } else if (s === "approved by pengawas" || s === "approve" || s === "approved") {
       return (
         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/20">
           <CheckCircle2 className="w-3.5 h-3.5" />
           Approved by Pengawas
+        </span>
+      );
+    } else if (s === "completed by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-500 border border-indigo-500/20">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Completed by Admin Kabupaten
+        </span>
+      );
+    } else if (s === "edited by admin kabupaten") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-600 dark:text-violet-500 border border-violet-500/20">
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          Edited by Admin Kabupaten
+        </span>
+      );
+    } else if (s === "submitted respondent") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-500 border border-cyan-500/20">
+          <Send className="w-3.5 h-3.5" />
+          Submitted Respondent
+        </span>
+      );
+    } else if (s === "revoked by pengawas" || s === "revoked") {
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-450 border border-purple-500/20">
+          <AlertCircle className="w-3.5 h-3.5" />
+          Revoked by Pengawas
         </span>
       );
     } else if (s === "kosong" || s === "") {
