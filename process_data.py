@@ -397,19 +397,9 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
             except Exception as e:
                 print(f"Warning: Could not read existing output file for merging: {e}")
         
-        # Remove existing data for completed emails (reset/overwrite behavior)
+        # Overwrite-only mode: do not delete previous records for completed emails, just overwrite/update them.
         if completed_emails_lower:
-            filtered_existing_data = {}
-            removed_count = 0
-            for id_code, row in existing_data.items():
-                if len(row) > searched_email_idx:
-                    searched_email = row[searched_email_idx].strip().lower()
-                    if searched_email in completed_emails_lower:
-                        removed_count += 1
-                        continue
-                filtered_existing_data[id_code] = row
-            existing_data = filtered_existing_data
-            print(f"Removed {removed_count} old records for {len(completed_emails_lower)} completed/scraped emails.")
+            print(f"Overwrite-only mode: preserving all existing records. Previous records for {len(completed_emails_lower)} completed/scraped emails will be updated/overwritten if found in the new scraped data.")
 
         # Read new scraped data
         with open(scraped_file, mode='r', encoding='utf-8') as infile:
