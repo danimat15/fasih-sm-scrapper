@@ -180,9 +180,8 @@ def save_dashboard_progress(dashboard_csv, dashboard_headers, status_columns, ne
                         email = row[email_idx].strip().lower()
                         sls_code = row[sls_idx].strip()
                         
-                        # Skip loading old records for emails that were successfully scraped in this run
-                        if completed_emails and (category, email) in completed_emails:
-                            continue
+                        # Do not skip loading old records to preserve them
+                        pass
 
                         status_counts = {}
                         for col in status_columns:
@@ -315,6 +314,38 @@ def normalize_status_name(status_raw: str) -> str:
         formatted_words[0] = formatted_words[0].capitalize()
         
     return " ".join(formatted_words)
+
+def parse_card_target(card_text: str):
+    if not card_text:
+        return None
+    # Remove email to avoid matching digits inside email
+    text_no_email = re.sub(r'\S+@\S+', '', card_text)
+    
+    # 1. Check for progress slash / dari / of (e.g. 10/255 or 10 dari 255)
+    progress_match = re.search(r'(?:/|dari|of)\s*(\d+)', text_no_email, re.IGNORECASE)
+    if progress_match:
+        try:
+            return int(progress_match.group(1))
+        except ValueError:
+            pass
+            
+    # 2. Check for labeled numbers (e.g. Beban: 255, Target: 255, Total: 255)
+    label_match = re.search(r'(?:beban|target|total|assignment|alokasi)\s*[:\-]?\s*(\d+)', text_no_email, re.IGNORECASE)
+    if label_match:
+        try:
+            return int(label_match.group(1))
+        except ValueError:
+            pass
+            
+    # 3. Fallback: find all standalone numbers in the clean text and take the last/largest one
+    numbers = re.findall(r'\b\d+\b', text_no_email)
+    if numbers:
+        filtered_numbers = [int(n) for n in numbers if int(n) != 2026]
+        if filtered_numbers:
+            return filtered_numbers[-1]
+        return int(numbers[-1])
+        
+    return None
 
 def run_dashboard_scraper():
     auth_file = "auth_state.json"
@@ -666,6 +697,8 @@ def run_dashboard_scraper():
                     email = card.locator("div.f\\:m-0.f\\:truncate.f\\:font-semibold.f\\:text-sm").text_content().strip()
                     print(f"    [{i+1}/{card_count}] Scraped user: {email}")
                     
+                    officer_keys = []
+                    
                     controls_id = card.get_attribute("aria-controls")
                     if not controls_id:
                         print("      Error: aria-controls attribute not found!")
@@ -696,6 +729,7 @@ def run_dashboard_scraper():
                         tags_count = tags.count()
                         
                         key = (category, email, sls_code)
+                        officer_keys.append(key)
                         if key not in scraped_data_dict:
                             scraped_data_dict[key] = {col: 0 for col in status_columns}
                             
@@ -718,6 +752,23 @@ def run_dashboard_scraper():
                                 
                                 scraped_data_dict[key][status_mapping[status_name]] = int(count)
                                     
+                    # Parse the true target from the card text and adjust to match it if there is a gap
+                    try:
+                        card_text = card.text_content()
+                        true_target = parse_card_target(card_text)
+                        if true_target is not None and officer_keys:
+                            scraped_sum = 0
+                            for k in officer_keys:
+                                scraped_sum += sum(scraped_data_dict[k].values())
+                            print(f"      Parsed Target: {true_target} | Scraped Sum: {scraped_sum}")
+                            if true_target > scraped_sum:
+                                diff = true_target - scraped_sum
+                                first_key = officer_keys[0]
+                                scraped_data_dict[first_key]["OPEN"] = scraped_data_dict[first_key].get("OPEN", 0) + diff
+                                print(f"      Adjusted target gap: added {diff} to OPEN count of SLS {first_key[2]}")
+                    except Exception as e:
+                        print(f"      Warning adjusting target gap: {e}")
+
                     # Mark email as successfully completed in dashboard scraping
                     completed_dashboard_emails.add((category, email.lower()))
 
@@ -854,9 +905,8 @@ def run_dashboard_scraper():
                                 email = row[email_idx].strip().lower()
                                 sls_code = row[sls_idx].strip()
                                 
-                                # Skip loading old records for emails that were successfully scraped in this run
-                                if completed_dashboard_emails and (category, email) in completed_dashboard_emails:
-                                    continue
+                                # Do not skip loading old records to preserve them
+                                pass
 
                                 status_counts = {}
                                 for col in status_columns:
