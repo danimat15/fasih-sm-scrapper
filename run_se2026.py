@@ -1079,11 +1079,11 @@ def run_unified_scraper():
                         officer_keys = []
 
                         controls_id = card.get_attribute("aria-controls")
-                        if not controls_id:
-                            print("      Skipped: no aria-controls.")
-                            continue
-
-                        content_panel = page.locator(f"#{controls_id}")
+                        if controls_id:
+                            content_panel = page.locator(f"#{controls_id}")
+                        else:
+                            print("      No aria-controls attribute. Using sibling fallback.")
+                            content_panel = card.locator("xpath=../following-sibling::div | following-sibling::div").first
 
                         if card.get_attribute("data-state") != "open":
                             card.click()
