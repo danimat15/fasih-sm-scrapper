@@ -90,9 +90,9 @@ def scrape_page(page, searched_email, csv_writer):
     scraped_count = 0
     for i in range(row_count):
         cols = rows_locator.nth(i).locator("td").all_text_contents()
-        if len(cols) >= 16:
+        if len(cols) >= 15:
             cleaned_cols = [c.strip() for c in cols]
-            csv_writer.writerow([searched_email] + cleaned_cols[1:16])
+            csv_writer.writerow([searched_email] + cleaned_cols[1:15])
             scraped_count += 1
             
     print(f"  Scraped {scraped_count} rows from current page.")
@@ -417,7 +417,7 @@ def run_data_scraper():
         detail_headers = [
             "Searched Email", "Kode Identitas", "Nama Keluarga/Bangunan/Usaha", "Alamat Prelist",
             "Nomor Urut Bangunan / IDSBR", "NIB", "Email", "Skala Usaha / Jenis Prelist",
-            "Jumlah Usaha", "Kode Pos", "Perubahan SLS", "IDSBR UMKM SLS Sama",
+            "Jumlah Usaha", "Kode Pos", "Perubahan SLS",
             "Status", "Mode", "Petugas Saat Ini", "Keterangan"
         ]
         

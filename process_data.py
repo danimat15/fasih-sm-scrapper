@@ -87,6 +87,10 @@ def run_git_commands(timestamp_str):
             os.path.join("dashboard", "public", "last_updated.txt")
         ]
         
+        import glob
+        json_files = glob.glob(os.path.join("dashboard", "public", "data_mikro", "*.json"))
+        files_to_add.extend(json_files)
+        
         # Check which files exist and add them
         existing_files = [f for f in files_to_add if os.path.exists(f)]
         if not existing_files:
@@ -460,11 +464,11 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
                 
         print(f"Scraped data processed: {updated_rows_count} records updated, {new_rows_count} new records added.")
         
-        # Prepare list of rows to write and normalize columns to exactly 20 (16 base + 1 new base + 3 extra)
+        # Prepare list of rows to write and normalize columns to exactly 19 (15 base + 1 new base + 3 extra)
         rows_to_write = []
         for id_code, row in existing_data.items():
-            base_row = row[:16]
-            while len(base_row) < 16:
+            base_row = row[:15]
+            while len(base_row) < 15:
                 base_row.append("")
                 
             digits_only = "".join([c for c in id_code if c.isdigit()])
@@ -558,6 +562,20 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
                 tf.write(timestamp)
             print(f"Wrote timestamp '{timestamp}' to '{timestamp_file}'.")
             
+            # Convert Excel data mikro to JSON
+            try:
+                import process_data_mikro
+                process_data_mikro.convert_excel_to_json()
+            except Exception as json_err:
+                print(f"Warning: Could not convert Excel data mikro to JSON: {json_err}")
+                
+            # Generate Excel and JSON reports
+            try:
+                import generate_reports
+                generate_reports.main()
+            except Exception as report_err:
+                print(f"Warning: Could not generate reports: {report_err}")
+                
             # Trigger Git automation
             run_git_commands(timestamp)
             

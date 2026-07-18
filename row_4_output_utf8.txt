@@ -1,0 +1,205 @@
+Col 1 (A):
+  H1: None
+  H2: None
+  H3: No.
+  Val/Formula in Row 4: 1
+Col 2 (B):
+  H1: None
+  H2: None
+  H3: Nama Petugas
+  Val/Formula in Row 4: Aditya Christovel Hangau
+Col 3 (C):
+  H1: None
+  H2: None
+  H3: Email Petugas
+  Val/Formula in Row 4: adityahangau@gmail.com
+Col 4 (D):
+  H1: None
+  H2: None
+  H3: Jabatan
+  Val/Formula in Row 4: PCL
+Col 5 (E):
+  H1: None
+  H2: None
+  H3: nama_kec
+  Val/Formula in Row 4: (090) TAHUNA
+Col 6 (F):
+  H1: Target
+  H2: Prelist Eligible
+  H3: Keluarga
+  Val/Formula in Row 4: 347
+Col 7 (G):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: 39
+Col 8 (H):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =F4+G4
+Col 9 (I):
+  H1: None
+  H2: Tidak Didata
+  H3: Keluarga
+  Val/Formula in Row 4: 74
+Col 10 (J):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: 17
+Col 11 (K):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =I4+J4
+Col 12 (L):
+  H1: None
+  H2: Prelist Didata
+  H3: Keluarga
+  Val/Formula in Row 4: =F4-I4
+Col 13 (M):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: =G4-J4
+Col 14 (N):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =L4+M4
+Col 15 (O):
+  H1: Status Muatan Pendataan
+  H2: Keluarga
+  H3: Tidak Didata
+  Val/Formula in Row 4: 74
+Col 16 (P):
+  H1: None
+  H2: None
+  H3: Baru
+  Val/Formula in Row 4: 13
+Col 17 (Q):
+  H1: None
+  H2: None
+  H3: Selisih
+  Val/Formula in Row 4: =P4-O4
+Col 18 (R):
+  H1: None
+  H2: Usaha
+  H3: Tidak Didata
+  Val/Formula in Row 4: 17
+Col 19 (S):
+  H1: None
+  H2: None
+  H3: Baru
+  Val/Formula in Row 4: 6
+Col 20 (T):
+  H1: None
+  H2: None
+  H3: Selisih
+  Val/Formula in Row 4: =S4-R4
+Col 21 (U):
+  H1: None
+  H2: Keluarga + Usaha
+  H3: Tidak Didata
+  Val/Formula in Row 4: =O4+P4
+Col 22 (V):
+  H1: None
+  H2: None
+  H3: Baru
+  Val/Formula in Row 4: =P4+S4
+Col 23 (W):
+  H1: None
+  H2: None
+  H3: Selisih
+  Val/Formula in Row 4: =V4-U4
+Col 24 (X):
+  H1: Realisasi 
+  H2: Assignment Eligible
+  H3: Keluarga
+  Val/Formula in Row 4: 151
+Col 25 (Y):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: 24
+Col 26 (Z):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =X4+Y4
+Col 27 (AA):
+  H1: None
+  H2: Assignment Didata
+  H3: Keluarga
+  Val/Formula in Row 4: 77
+Col 28 (AB):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: 7
+Col 29 (AC):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =AA4+AB4
+Col 30 (AD):
+  H1: Progres Terhadap Prelist Eligible
+  H2: Assignment Eligible
+  H3: Keluarga
+  Val/Formula in Row 4: =X4/F4
+Col 31 (AE):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: =Y4/G4
+Col 32 (AF):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =Z4/H4
+Col 33 (AG):
+  H1: None
+  H2: Assignment Didata
+  H3: Keluarga
+  Val/Formula in Row 4: =AA4/F4
+Col 34 (AH):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: =AB4/G4
+Col 35 (AI):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =AC4/H4
+Col 36 (AJ):
+  H1: Progres Terhadap Prelist Didata
+  H2: Assignment Eligible
+  H3: Keluarga
+  Val/Formula in Row 4: =X4/L4
+Col 37 (AK):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: =Y4/M4
+Col 38 (AL):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =Z4/N4
+Col 39 (AM):
+  H1: None
+  H2: Assignment Didata
+  H3: Keluarga
+  Val/Formula in Row 4: =AA4/L4
+Col 40 (AN):
+  H1: None
+  H2: None
+  H3: Usaha
+  Val/Formula in Row 4: =AB4/M4
+Col 41 (AO):
+  H1: None
+  H2: None
+  H3: Jumlah
+  Val/Formula in Row 4: =AC4/N4

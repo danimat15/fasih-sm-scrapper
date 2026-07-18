@@ -104,19 +104,18 @@ def scrape_page(page, searched_email, csv_writer):
         # Col 8: Jumlah Usaha
         # Col 9: Kode Pos
         # Col 10: Perubahan SLS
-        # Col 11: IDSBR UMKM SLS Sama
-        # Col 12: Status
-        # Col 13: Mode
-        # Col 14: Petugas Saat Ini
-        # Col 15: Keterangan
-        # Col 16: Action Button
+        # Col 11: Status
+        # Col 12: Mode
+        # Col 13: Petugas Saat Ini
+        # Col 14: Keterangan
+        # Col 15: Action Button
         
-        if len(cols) >= 16:
+        if len(cols) >= 15:
             # Clean text values (strip whitespace)
             cleaned_cols = [c.strip() for c in cols]
             
-            # Write row to CSV: searched email + table columns (excluding checkbox at index 0 and action at index 16)
-            csv_writer.writerow([searched_email] + cleaned_cols[1:16])
+            # Write row to CSV: searched email + table columns (excluding checkbox at index 0 and action at index 15)
+            csv_writer.writerow([searched_email] + cleaned_cols[1:15])
             scraped_count += 1
             
     print(f"  Scraped {scraped_count} rows from current page.")
@@ -265,7 +264,7 @@ def run_scraper(use_test_emails=False):
     csv_headers = [
         "Searched Email", "Kode Identitas", "Nama Keluarga/Bangunan/Usaha", "Alamat Prelist",
         "Nomor Urut Bangunan / IDSBR", "NIB", "Email", "Skala Usaha / Jenis Prelist",
-        "Jumlah Usaha", "Kode Pos", "Perubahan SLS", "IDSBR UMKM SLS Sama",
+        "Jumlah Usaha", "Kode Pos", "Perubahan SLS",
         "Status", "Mode", "Petugas Saat Ini", "Keterangan"
     ]
     
