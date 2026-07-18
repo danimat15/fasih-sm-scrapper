@@ -58,6 +58,9 @@ def normalize_scale(scale_str):
     return "Keluarga"
 
 def run_git_commands(timestamp_str):
+    if os.environ.get("GITHUB_ACTIONS") == "true":
+        print("Running in GitHub Actions. Skipping local git commands.")
+        return
     print("Starting automatic Git push...")
     try:
         # Check if we are inside a git repository
