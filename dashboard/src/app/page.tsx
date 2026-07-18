@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import Navbar from "@/components/Navbar";
 import {
   Search,
   User,
@@ -237,7 +238,6 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
 
 export default function DashboardPage() {
   // Theme state
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
 
   // Data states
@@ -445,15 +445,15 @@ export default function DashboardPage() {
               unitCount: row[8].replace(/"/g, "").trim(),
               postalCode: row[9].replace(/"/g, "").trim(),
               slsChange: row[10].replace(/"/g, "").trim(),
-              idsbrUmkm: row[11].replace(/"/g, "").trim(),
-              status: row[12].replace(/"/g, "").trim() || "Kosong", // blank status is marked as 'Kosong'
-              mode: row[13].replace(/"/g, "").trim(),
-              officer: row[14].replace(/"/g, "").trim(),
-              notes: row[15].replace(/"/g, "").trim(),
-              sumberData: row[16] ? row[16].replace(/"/g, "").trim() : "",
-              nama_kec: row[17] ? row[17].replace(/"/g, "").trim() : "",
-              koseka: row[18] ? row[18].replace(/"/g, "").trim() : "",
-              isPrioritas: row[19] ? row[19].replace(/"/g, "").trim() : "Tidak",
+              idsbrUmkm: "",
+              status: row[11].replace(/"/g, "").trim() || "Kosong", // blank status is marked as 'Kosong'
+              mode: row[12].replace(/"/g, "").trim(),
+              officer: row[13].replace(/"/g, "").trim(),
+              notes: row[14].replace(/"/g, "").trim(),
+              sumberData: row[15] ? row[15].replace(/"/g, "").trim() : "",
+              nama_kec: row[16] ? row[16].replace(/"/g, "").trim() : "",
+              koseka: row[17] ? row[17].replace(/"/g, "").trim() : "",
+              isPrioritas: row[18] ? row[18].replace(/"/g, "").trim() : "Tidak",
             });
           }
         }
@@ -1013,86 +1013,9 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className={`min-h-screen font-sans transition-colors duration-300 ${isDarkMode ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"}`}>
+    <div className="min-h-screen font-sans bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300">
       
-      {/* Header Bar */}
-      <header className="sticky top-0 z-30 border-b backdrop-blur-md transition-colors bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 md:h-16 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-0">
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            {/* Visual BPS Logo Icon */}
-            <div className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl p-1 shadow-md border border-slate-200 dark:border-slate-700 shrink-0">
-              <img src="/icon.png" alt="Logo BPS" className="w-8 h-8 object-contain" />
-            </div>
-            <div>
-              <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                BPS Kabupaten Kepulauan Sangihe
-              </h1>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-                Dashboard Monitoring Sensus Ekonomi 2026
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-            <nav className="flex items-center gap-0.5 sm:gap-1 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5 sm:p-1 bg-slate-50/50 dark:bg-slate-950/50 flex-1 md:flex-none justify-center overflow-x-auto scrollbar-none flex-nowrap min-w-0">
-              <Link 
-                href="/" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all bg-orange-500 text-white shadow-sm shrink-0"
-              >
-                Dashboard
-              </Link>
-              <Link 
-                href="/tabulasi" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Tabulasi
-              </Link>
-              <Link 
-                href="/petugas" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Petugas
-              </Link>
-              <Link 
-                href="/usaha" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Usaha
-              </Link>
-              <Link 
-                href="/comparison-sbr" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Comparison SBR
-              </Link>
-              <Link 
-                href="/anomali" 
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Anomali
-              </Link>
-            </nav>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                title="Ganti Tema"
-              >
-                {isDarkMode ? <Sun className="w-4 h-4 text-orange-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
-              </button>
-              <button
-                onClick={fetchData}
-                disabled={loading}
-                className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors disabled:opacity-50 cursor-pointer"
-                title="Segarkan Data"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin text-orange-500" : ""}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1116,12 +1039,22 @@ export default function DashboardPage() {
               </p>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 self-start md:self-auto flex flex-col items-start md:items-end border border-white/10 text-left md:text-right">
-              <span className="text-[10px] sm:text-xs text-orange-200">Terakhir Diperbarui</span>
-              <span className="text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 mt-0.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
-                <span className="truncate">{loading ? "Menyinkronkan..." : lastUpdated || "Belum ada data"}</span>
-              </span>
+            <div className="flex items-center gap-3 self-start md:self-auto">
+              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 sm:p-4 flex flex-col items-start md:items-end border border-white/10 text-left md:text-right">
+                <span className="text-[10px] sm:text-xs text-orange-200">Terakhir Diperbarui</span>
+                <span className="text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
+                  <span className="truncate">{loading ? "Menyinkronkan..." : lastUpdated || "Belum ada data"}</span>
+                </span>
+              </div>
+              <button
+                onClick={fetchData}
+                disabled={loading}
+                className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-white p-4 rounded-2xl transition-all cursor-pointer disabled:opacity-50 shrink-0 flex items-center justify-center"
+                title="Segarkan Data"
+              >
+                <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+              </button>
             </div>
           </div>
         </div>

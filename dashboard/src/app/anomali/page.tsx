@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Moon,
@@ -46,7 +47,6 @@ interface DetailData {
 }
 
 export default function AnomaliPage() {
-  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<"keluarga" | "usaha">("keluarga");
   
   // Data States
@@ -76,25 +76,6 @@ export default function AnomaliPage() {
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-
-  // Sync Dark Mode
-  useEffect(() => {
-    const darkModeTheme =
-      localStorage.getItem("theme") === "dark" ||
-      (!("theme" in localStorage) &&
-        window.matchMedia("(prefers-color-scheme: dark)").matches);
-    setIsDarkMode(darkModeTheme);
-  }, []);
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }, [isDarkMode]);
 
   // Load Data dynamically based on activeTab
   const fetchData = async () => {
@@ -387,90 +368,9 @@ export default function AnomaliPage() {
 
   return (
     <div
-      className={`min-h-screen font-sans transition-colors duration-300 ${
-        isDarkMode ? "dark bg-slate-950 text-slate-100" : "bg-slate-50 text-slate-900"
-      }`}
+      className="min-h-screen font-sans bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300"
     >
-      {/* Header Bar */}
-      <header className="sticky top-0 z-30 border-b backdrop-blur-md transition-colors bg-white/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 md:py-0 md:h-16 flex flex-col md:flex-row items-center justify-between gap-3 md:gap-0">
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <div className="w-10 h-10 flex items-center justify-center bg-white dark:bg-slate-800 rounded-xl p-1 shadow-md border border-slate-200 dark:border-slate-700 shrink-0">
-              <img src="/icon.png" alt="Logo BPS" className="w-8 h-8 object-contain" />
-            </div>
-            <div>
-              <h1 className="text-xs sm:text-sm md:text-base font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                BPS Kabupaten Kepulauan Sangihe
-              </h1>
-              <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">
-                Dashboard Monitoring Sensus Ekonomi 2026
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-            <nav className="flex items-center gap-0.5 sm:gap-1 border border-slate-200 dark:border-slate-800 rounded-xl p-0.5 sm:p-1 bg-slate-50/50 dark:bg-slate-950/50 flex-1 md:flex-none justify-center overflow-x-auto scrollbar-none flex-nowrap min-w-0">
-              <Link
-                href="/"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/tabulasi"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Tabulasi
-              </Link>
-              <Link
-                href="/petugas"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Petugas
-              </Link>
-              <Link
-                href="/usaha"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Usaha
-              </Link>
-              <Link
-                href="/comparison-sbr"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 shrink-0"
-              >
-                Comparison SBR
-              </Link>
-              <Link
-                href="/anomali"
-                className="px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-bold transition-all bg-orange-500 text-white shadow-sm shrink-0"
-              >
-                Anomali
-              </Link>
-            </nav>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                title="Ganti Tema"
-              >
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-orange-400" />
-                ) : (
-                  <Moon className="w-4 h-4 text-slate-700" />
-                )}
-              </button>
-              <button
-                onClick={fetchData}
-                className="p-2 sm:p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                title="Refresh Data"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1">
@@ -483,6 +383,17 @@ export default function AnomaliPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               Halaman ini mengidentifikasi anomali data hasil pencacahan dan memantau status tindak lanjutnya.
             </p>
+          </div>
+          
+          <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
+            <button
+              onClick={fetchData}
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 transition-colors cursor-pointer flex items-center justify-center gap-2 text-xs font-semibold"
+              title="Refresh Data"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
+              Segarkan Data
+            </button>
           </div>
           
           {/* Sub-Tab Selector */}
