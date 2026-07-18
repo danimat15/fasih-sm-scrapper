@@ -76,10 +76,28 @@ def format_kec_name(name):
 
 def generate_report_1(public_dir):
     print("Generating Report 1 (Dashboard Leaderboards)...")
+    
+    hour = START_TIME.hour
     scraped_file = "dashboard_scraped_data.csv"
     morning_file = "dashboard_scraped_data_morning.csv"
+    morning_prev_file = "dashboard_scraped_data_morning_prev.csv"
     evening_file = "dashboard_scraped_data_evening.csv"
     
+    if hour < 13:
+        # Report Pagi: current morning vs previous morning
+        if os.path.exists(morning_file):
+            scraped_file = morning_file
+        baseline_file = morning_prev_file
+        if not os.path.exists(baseline_file):
+            baseline_file = scraped_file
+    else:
+        # Report Sore: current evening vs morning of same day
+        if os.path.exists(evening_file):
+            scraped_file = evening_file
+        baseline_file = morning_file
+        if not os.path.exists(baseline_file):
+            baseline_file = scraped_file
+
     if not os.path.exists(scraped_file):
         print(f"Error: {scraped_file} not found. Skipping Report 1.")
         return
@@ -87,12 +105,6 @@ def generate_report_1(public_dir):
     df_curr = pd.read_csv(scraped_file)
     df_curr = df_curr[df_curr["Category"].str.lower() == "pengawas"]
     
-    # Check if we compare morning-morning or evening-evening
-    hour = START_TIME.hour
-    baseline_file = morning_file if hour < 13 else evening_file
-    if not os.path.exists(baseline_file):
-        baseline_file = scraped_file # Fallback
-        
     df_base = pd.read_csv(baseline_file)
     df_base = df_base[df_base["Category"].str.lower() == "pengawas"]
     
@@ -565,17 +577,28 @@ def generate_report_1(public_dir):
             "rank_change": int(row["Rank_Change"])
         })
         
+    report_type = "pagi" if hour < 13 else "sore"
+    report_content = {
+        "report_type": report_type,
+        "date": date_title,
+        "time": time_title,
+        "kecamatan": kec_data_list,
+        "ppl": ppl_list,
+        "pml": pml_list,
+        "kec_leaderboard": kec_lead_list
+    }
+    
     import json
     with open(report_json_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "date": date_title,
-            "time": time_title,
-            "kecamatan": kec_data_list,
-            "ppl": ppl_list,
-            "pml": pml_list,
-            "kec_leaderboard": kec_lead_list
-        }, f, indent=2, ensure_ascii=False)
+        json.dump(report_content, f, indent=2, ensure_ascii=False)
     print("report_data.json written successfully!")
+    
+    # Save a specific snapshot copy
+    snapshot_filename = "report_data_morning.json" if report_type == "pagi" else "report_data_evening.json"
+    snapshot_path = os.path.join(public_dir, snapshot_filename)
+    with open(snapshot_path, "w", encoding="utf-8") as f:
+        json.dump(report_content, f, indent=2, ensure_ascii=False)
+    print(f"{snapshot_filename} snapshot written successfully!")
 
 def generate_report_2(public_dir):
     print("Generating Report 2 (Monev Excel Report)...")
@@ -1238,10 +1261,18 @@ def generate_report_2(public_dir):
                 })
             
             report_data["status_muatan"] = status_muatan_list
+            report_type = report_data.get("report_type", "pagi")
             
             with open(report_json_path, "w", encoding="utf-8") as f:
                 json.dump(report_data, f, indent=2, ensure_ascii=False)
             print("report_data.json updated with status_muatan successfully!")
+            
+            # Also update snapshot
+            snapshot_filename = "report_data_morning.json" if report_type == "pagi" else "report_data_evening.json"
+            snapshot_path = os.path.join(public_dir, snapshot_filename)
+            with open(snapshot_path, "w", encoding="utf-8") as f:
+                json.dump(report_data, f, indent=2, ensure_ascii=False)
+            print(f"{snapshot_filename} updated with status_muatan successfully!")
         except Exception as e:
             print(f"Error updating report_data.json: {e}")
 

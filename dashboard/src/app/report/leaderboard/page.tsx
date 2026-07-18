@@ -50,22 +50,35 @@ interface ReportData {
 }
 
 export default function LeaderboardPage() {
+  const [reportType, setReportType] = useState<"pagi" | "sore">("pagi");
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"ppl" | "pml" | "kec">("ppl");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  const fetchData = async () => {
+  const fetchData = async (type?: "pagi" | "sore") => {
     setLoading(true);
+    const targetType = type || reportType;
     try {
-      const res = await fetch("/report_data.json");
+      const filename = type 
+        ? (type === "pagi" ? "/report_data_morning.json" : "/report_data_evening.json")
+        : "/report_data.json";
+        
+      let res = await fetch(filename);
+      if (!res.ok && type) {
+        res = await fetch("/report_data.json");
+      }
       if (!res.ok) {
         throw new Error("Gagal memuat data laporan.");
       }
       const jsonData = await res.json();
       setData(jsonData);
       setError(null);
+      
+      if (!type && jsonData.report_type) {
+        setReportType(jsonData.report_type);
+      }
     } catch (err: any) {
       setError(err.message || "Terjadi kesalahan.");
     } finally {
@@ -76,6 +89,11 @@ export default function LeaderboardPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleReportTypeChange = (type: "pagi" | "sore") => {
+    setReportType(type);
+    fetchData(type);
+  };
 
   const formatPct = (val: number) => {
     return `${val.toFixed(2)}%`;
@@ -197,9 +215,33 @@ export default function LeaderboardPage() {
             Peringkat pencapaian target pendataan lapangan PPL, PML, dan Kecamatan.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Toggle Pagi / Sore */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+            <button
+              onClick={() => handleReportTypeChange("pagi")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                reportType === "pagi"
+                  ? "bg-orange-500 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              Laporan Pagi (vs Pagi H-1)
+            </button>
+            <button
+              onClick={() => handleReportTypeChange("sore")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                reportType === "sore"
+                  ? "bg-orange-500 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
+              }`}
+            >
+              Laporan Sore (vs Pagi H-0)
+            </button>
+          </div>
+
           <button
-            onClick={fetchData}
+            onClick={() => fetchData()}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />

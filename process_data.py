@@ -125,17 +125,24 @@ def save_snapshots_if_needed(public_dir=None):
     dashboard_scraped_src = "dashboard_scraped_data.csv"
     if os.path.exists(dashboard_scraped_src):
         morning_dest = "dashboard_scraped_data_morning.csv"
+        morning_prev_dest = "dashboard_scraped_data_morning_prev.csv"
         evening_dest = "dashboard_scraped_data_evening.csv"
+        
+        # Ensure destination folder in dashboard/public exists
+        os.makedirs(public_dir, exist_ok=True)
         
         # WITA is UTC+8
         now = datetime.now(wita_tz)
         hour = now.hour
         
-        # Ensure destination folder in dashboard/public exists
-        os.makedirs(public_dir, exist_ok=True)
-        
         # Cutoff is 13:00 (1 PM WITA)
         if hour < 13:
+            # If current morning snapshot exists, copy it to morning_prev
+            if os.path.exists(morning_dest):
+                shutil.copy2(morning_dest, morning_prev_dest)
+                shutil.copy2(morning_dest, os.path.join(public_dir, "dashboard_scraped_data_morning_prev.csv"))
+                print("Rotated morning snapshot to morning_prev.")
+                
             shutil.copy2(dashboard_scraped_src, morning_dest)
             shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning.csv"))
             print(f"Updated morning snapshot '{morning_dest}' (hour {hour})")
@@ -149,6 +156,10 @@ def save_snapshots_if_needed(public_dir=None):
             shutil.copy2(dashboard_scraped_src, morning_dest)
             shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning.csv"))
             print(f"Initialized morning snapshot fallback")
+        if not os.path.exists(morning_prev_dest):
+            shutil.copy2(dashboard_scraped_src, morning_prev_dest)
+            shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning_prev.csv"))
+            print(f"Initialized morning_prev snapshot fallback")
         if not os.path.exists(evening_dest):
             shutil.copy2(dashboard_scraped_src, evening_dest)
             shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_evening.csv"))
