@@ -184,6 +184,18 @@ export default function MuatanReportPage() {
           </div>
         </div>
 
+        {/* Info Card */}
+        {data && (
+          <div className="mb-6 p-4 rounded-xl bg-orange-50/50 dark:bg-orange-950/10 border border-orange-200/50 dark:border-orange-900/30 flex flex-wrap gap-x-6 gap-y-2 text-xs text-orange-800 dark:text-orange-300">
+            <div>
+              <span className="font-semibold">Hari/Tanggal:</span> {data.date}
+            </div>
+            <div>
+              <span className="font-semibold">Pukul:</span> {data.time}
+            </div>
+          </div>
+        )}
+
         {/* Legend / Keterangan Kolom */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 mb-6 shadow-sm">
           <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-1.5">

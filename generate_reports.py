@@ -23,6 +23,20 @@ def get_current_timestamp_str():
     hour_minute = START_TIME.strftime("%H:%M")
     return f"Kamis, {day} {month_name} {year}", f"{hour_minute} WITA"
 
+def get_last_updated_timestamp(public_dir):
+    txt_path = os.path.join(public_dir, "last_updated.txt")
+    if os.path.exists(txt_path):
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+            if " pukul " in content:
+                parts = content.split(" pukul ")
+                return parts[0], parts[1]
+            return content, ""
+        except Exception as e:
+            print(f"Error reading last_updated.txt: {e}")
+    return get_current_timestamp_str()
+
 def copy_cell_style(src_cell, dest_cell):
     if src_cell.has_style:
         dest_cell.font = Font(
@@ -224,7 +238,7 @@ def generate_report_1(public_dir):
     ws1.title = "Monitoring Kecamatan"
     
     # Title
-    date_title, time_title = get_current_timestamp_str()
+    date_title, time_title = get_last_updated_timestamp(public_dir)
     ws1.merge_cells("A1:K1")
     ws1["A1"] = "MONITORING EVALUASI PROGRES PENDATAAN LAPANGAN SENSUS EKONOMI 2026"
     ws1["A1"].font = Font(name="Calibri", size=14, bold=True)
