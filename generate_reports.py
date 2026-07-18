@@ -133,12 +133,22 @@ def generate_report_1(public_dir):
     merged_kec["Revoke_Jml"] = merged_kec["REVOKED BY Pengawas"]
     merged_kec["Realisasi_Jml"] = merged_kec["Realisasi"]
     
+    def join_unique_kec(series):
+        unique_vals = [format_kec_name(val) for val in series.dropna().unique() if val != "-"]
+        return ", ".join(sorted(list(set(unique_vals))))
+
+    def join_unique_koseka(series):
+        unique_vals = [str(val).strip() for val in series.dropna().unique() if str(val).strip() != "-"]
+        return ", ".join(sorted(list(set(unique_vals))))
+
     # 2. Leaderboards PPL
     # PPL is Category = 'Pencacah'
     df_ppl = pd.read_csv(scraped_file)
     df_ppl = df_ppl[df_ppl["Category"].str.lower() == "pencacah"]
     
-    ppl_grouped = df_ppl.groupby(["nama_petugas", "nama_kec", "koseka"]).agg({
+    ppl_grouped = df_ppl.groupby("nama_petugas").agg({
+        "nama_kec": join_unique_kec,
+        "koseka": join_unique_koseka,
         "OPEN": "sum",
         "DRAFT": "sum",
         "SUBMITTED BY Pencacah": "sum",
@@ -165,14 +175,6 @@ def generate_report_1(public_dir):
     df_pml = pd.read_csv(scraped_file)
     df_pml = df_pml[df_pml["Category"].str.lower() == "pengawas"]
     
-    def join_unique_kec(series):
-        unique_vals = [format_kec_name(val) for val in series.dropna().unique() if val != "-"]
-        return ", ".join(sorted(list(set(unique_vals))))
-
-    def join_unique_koseka(series):
-        unique_vals = [str(val).strip() for val in series.dropna().unique() if str(val).strip() != "-"]
-        return ", ".join(sorted(list(set(unique_vals))))
-
     pml_grouped = df_pml.groupby("nama_petugas").agg({
         "nama_kec": join_unique_kec,
         "koseka": join_unique_koseka,

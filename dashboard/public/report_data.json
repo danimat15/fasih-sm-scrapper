@@ -1,6 +1,6 @@
 {
   "date": "Kamis, 18 Juli 2026",
-  "time": "14:48 WITA",
+  "time": "15:21 WITA",
   "kecamatan": [
     {
       "kecamatan": "Manganitu Selatan",
@@ -741,31 +741,17 @@
     },
     {
       "nama": "Elan Chrisye Ansar",
-      "kecamatan": "Tabukan Selatan Tengah",
-      "koseka": "Erwin",
-      "target": 13,
-      "open": 13,
-      "draft": 0,
-      "submit": 0,
-      "reject": 0,
-      "approved": 0,
-      "progres": 0,
-      "realisasi": 0,
-      "realisasi_pct": 0.0
-    },
-    {
-      "nama": "Elan Chrisye Ansar",
-      "kecamatan": "Tabukan Selatan Tenggara",
-      "koseka": "Lalu",
-      "target": 350,
-      "open": 151,
+      "kecamatan": "Tabukan Selatan Tengah, Tabukan Selatan Tenggara",
+      "koseka": "Erwin, Lalu",
+      "target": 363,
+      "open": 164,
       "draft": 0,
       "submit": 0,
       "reject": 0,
       "approved": 199,
       "progres": 0,
       "realisasi": 199,
-      "realisasi_pct": 56.85714285714286
+      "realisasi_pct": 54.82093663911846
     },
     {
       "nama": "Erin Fernanda Wenas",
@@ -1217,31 +1203,17 @@
     },
     {
       "nama": "Mabelkhan Ladorang",
-      "kecamatan": "Tabukan Selatan Tengah",
-      "koseka": "Erwin",
-      "target": 28,
-      "open": 28,
-      "draft": 0,
-      "submit": 0,
-      "reject": 0,
-      "approved": 0,
-      "progres": 0,
-      "realisasi": 0,
-      "realisasi_pct": 0.0
-    },
-    {
-      "nama": "Mabelkhan Ladorang",
-      "kecamatan": "Tabukan Selatan Tenggara",
-      "koseka": "Lalu",
-      "target": 318,
-      "open": 147,
+      "kecamatan": "Tabukan Selatan Tengah, Tabukan Selatan Tenggara",
+      "koseka": "Erwin, Lalu",
+      "target": 346,
+      "open": 175,
       "draft": 0,
       "submit": 0,
       "reject": 0,
       "approved": 171,
       "progres": 0,
       "realisasi": 171,
-      "realisasi_pct": 53.77358490566038
+      "realisasi_pct": 49.421965317919074
     },
     {
       "nama": "Maknany Sasiang",
@@ -1805,31 +1777,17 @@
     },
     {
       "nama": "Sintike Susanti Meling Horman",
-      "kecamatan": "Tabukan Selatan Tengah",
-      "koseka": "Erwin",
-      "target": 24,
-      "open": 24,
-      "draft": 0,
-      "submit": 0,
-      "reject": 0,
-      "approved": 0,
-      "progres": 0,
-      "realisasi": 0,
-      "realisasi_pct": 0.0
-    },
-    {
-      "nama": "Sintike Susanti Meling Horman",
-      "kecamatan": "Tabukan Selatan Tenggara",
-      "koseka": "Lalu",
-      "target": 350,
-      "open": 96,
+      "kecamatan": "Tabukan Selatan Tengah, Tabukan Selatan Tenggara",
+      "koseka": "Erwin, Lalu",
+      "target": 374,
+      "open": 120,
       "draft": 1,
       "submit": 0,
       "reject": 1,
       "approved": 252,
       "progres": 0,
       "realisasi": 253,
-      "realisasi_pct": 72.28571428571429
+      "realisasi_pct": 67.64705882352942
     },
     {
       "nama": "Siti Maryam Madonsa",
