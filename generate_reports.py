@@ -65,6 +65,53 @@ def copy_cell_style(src_cell, dest_cell):
         )
         dest_cell.number_format = src_cell.number_format
 
+def calculate_target_info():
+    """Calculate daily target info matching frontend logic."""
+    import math
+    start_date = datetime.datetime(2026, 6, 15, tzinfo=wita_tz)
+    now = datetime.datetime.now(wita_tz)
+    
+    start_day = datetime.datetime(start_date.year, start_date.month, start_date.day, tzinfo=wita_tz)
+    current_day = datetime.datetime(now.year, now.month, now.day, tzinfo=wita_tz)
+    
+    diff_days = (current_day - start_day).days + 1
+    
+    elapsed_days = diff_days
+    if now.hour < 12:
+        elapsed_days = diff_days - 1
+    elapsed_days = max(0, elapsed_days)
+    
+    daily_target = 1.67
+    cumulative_target = elapsed_days * daily_target
+    
+    return {
+        "daily_target": daily_target,
+        "elapsed_days": elapsed_days,
+        "cumulative_target": cumulative_target,
+    }
+
+def get_realisasi_color(realisasi_pct, cumulative_target):
+    """Return (font, fill) tuple based on realisasi vs target thresholds.
+    Green: above cumulative target
+    Amber/Yellow: between 50% of target and target
+    Red: below 50% of target
+    """
+    green_fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
+    green_font = Font(color="006100", bold=True)
+    amber_fill = PatternFill(fill_type="solid", start_color="FFEB9C", end_color="FFEB9C")
+    amber_font = Font(color="9C6500", bold=True)
+    red_fill = PatternFill(fill_type="solid", start_color="FFC7CE", end_color="FFC7CE")
+    red_font = Font(color="9C0006", bold=True)
+    
+    half_target = 0.5 * cumulative_target
+    
+    if realisasi_pct >= cumulative_target:
+        return green_font, green_fill
+    elif realisasi_pct < half_target:
+        return red_font, red_fill
+    else:
+        return amber_font, amber_fill
+
 def format_kec_name(name):
     if not name or pd.isna(name):
         return "-"
@@ -243,6 +290,12 @@ def generate_report_1(public_dir):
     kec_lead = pd.merge(kec_lead, kec_base_sorted[["nama_kec", "Rank_base"]], on="nama_kec", how="left")
     kec_lead["Rank_Change"] = kec_lead["Rank_base"].fillna(15) - kec_lead["Rank"]
     
+    # Calculate target info
+    target_info = calculate_target_info()
+    daily_target_pct = target_info["daily_target"]
+    elapsed_days = target_info["elapsed_days"]
+    cumulative_target_pct = target_info["cumulative_target"]
+    
     # Save Report 1 as Excel
     wb = openpyxl.Workbook()
     # Sheet 1: Monitoring Kecamatan
@@ -258,6 +311,31 @@ def generate_report_1(public_dir):
     
     ws1["A3"] = f"Hari/Tanggal : {date_title}"
     ws1["A4"] = f"Pukul        : {time_title}"
+    
+    # Target info rows
+    target_label_font = Font(name="Calibri", size=10, bold=True, color="9C6500")
+    target_value_font = Font(name="Calibri", size=10, bold=True, color="E26B0A")
+    ws1["D3"] = "Target Harian:"
+    ws1["D3"].font = target_label_font
+    ws1["E3"] = f"{daily_target_pct}% per hari"
+    ws1["E3"].font = target_value_font
+    ws1["D4"] = f"Target Hari Ini (H-{elapsed_days}):"
+    ws1["D4"].font = target_label_font
+    ws1["E4"] = f"{cumulative_target_pct:.2f}%"
+    ws1["E4"].font = target_value_font
+    
+    # Legend for coloring
+    ws1["G3"] = "Keterangan Warna Realisasi:"
+    ws1["G3"].font = Font(name="Calibri", size=9, bold=True)
+    ws1["G4"] = f"Hijau >= {cumulative_target_pct:.2f}%"
+    ws1["G4"].font = Font(name="Calibri", size=9, color="006100", bold=True)
+    ws1["G4"].fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
+    ws1["H4"] = f"Kuning {cumulative_target_pct*0.5:.2f}% - {cumulative_target_pct:.2f}%"
+    ws1["H4"].font = Font(name="Calibri", size=9, color="9C6500", bold=True)
+    ws1["H4"].fill = PatternFill(fill_type="solid", start_color="FFEB9C", end_color="FFEB9C")
+    ws1["I4"] = f"Merah < {cumulative_target_pct*0.5:.2f}%"
+    ws1["I4"].font = Font(name="Calibri", size=9, color="9C0006", bold=True)
+    ws1["I4"].fill = PatternFill(fill_type="solid", start_color="FFC7CE", end_color="FFC7CE")
     
     headers = [
         "KECAMATAN", "TARGET", "JUMLAH SLS", 
@@ -329,6 +407,12 @@ def generate_report_1(public_dir):
         # Formats
         for col_idx in [5, 7, 9, 11, 13, 15, 17, 19]:
             ws1.cell(row=r, column=col_idx).number_format = '0.00%'
+        
+        # Conditional coloring for Realisasi % (column 17)
+        realisasi_pct_val = (realisasi / target * 100) if target > 0 else 0
+        r_font, r_fill = get_realisasi_color(realisasi_pct_val, cumulative_target_pct)
+        ws1.cell(row=r, column=17).font = r_font
+        ws1.cell(row=r, column=17).fill = r_fill
             
         row_num += 1
         
@@ -356,6 +440,14 @@ def generate_report_1(public_dir):
     
     for col_idx in [5, 7, 9, 11, 13, 15, 17, 19]:
         ws1.cell(row=r, column=col_idx).number_format = '0.00%'
+    
+    # Color the total realisasi % cell too
+    total_target = sum(row["Target"] for _, row in merged_kec.iterrows())
+    total_realisasi = sum(row["Realisasi_Jml"] for _, row in merged_kec.iterrows())
+    total_real_pct = (total_realisasi / total_target * 100) if total_target > 0 else 0
+    tr_font, tr_fill = get_realisasi_color(total_real_pct, cumulative_target_pct)
+    ws1.cell(row=r, column=17).font = Font(bold=True, color=tr_font.color)
+    ws1.cell(row=r, column=17).fill = tr_fill
         
     thin_border = Border(
         left=Side(style='thin', color='CCCCCC'),
@@ -368,7 +460,9 @@ def generate_report_1(public_dir):
             cell = ws1.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
             if row_idx == r:
-                cell.fill = PatternFill(fill_type="solid", start_color="FCE4D6", end_color="FCE4D6")
+                # Keep total row orange fill, but preserve realisasi % coloring
+                if col_idx != 17:
+                    cell.fill = PatternFill(fill_type="solid", start_color="FCE4D6", end_color="FCE4D6")
                 
     # Sheets for Leaderboards
     # Sheet 2: PPL Leaderboards
@@ -377,6 +471,14 @@ def generate_report_1(public_dir):
     ws2["A1"].font = Font(size=12, bold=True)
     ws2["A3"] = f"Hari/Tanggal : {date_title}"
     ws2["A4"] = f"Pukul        : {time_title}"
+    ws2["D3"] = "Target Harian:"
+    ws2["D3"].font = target_label_font
+    ws2["E3"] = f"{daily_target_pct}% per hari"
+    ws2["E3"].font = target_value_font
+    ws2["D4"] = f"Target Hari Ini (H-{elapsed_days}):"
+    ws2["D4"].font = target_label_font
+    ws2["E4"] = f"{cumulative_target_pct:.2f}%"
+    ws2["E4"].font = target_value_font
     
     ppl_headers = ["NO", "NAMA", "KECAMATAN", "KOSEKA", "TARGET", "OPEN", "DRAFT", "SUBMIT", "REJECT", "APPROVED", "PROGRES", "REALISASI", "REALISASI (%)"]
     ws2.append([])
@@ -404,7 +506,12 @@ def generate_report_1(public_dir):
         ws2.cell(row=r, column=10, value=row["Approved"])
         ws2.cell(row=r, column=11, value=row["Progres"])
         ws2.cell(row=r, column=12, value=row["Realisasi"])
-        ws2.cell(row=r, column=13, value=row["Realisasi_Pct"]/100).number_format = '0.00%'
+        ppl_pct_cell = ws2.cell(row=r, column=13, value=row["Realisasi_Pct"]/100)
+        ppl_pct_cell.number_format = '0.00%'
+        # Conditional coloring for PPL Realisasi %
+        ppl_r_font, ppl_r_fill = get_realisasi_color(row["Realisasi_Pct"], cumulative_target_pct)
+        ppl_pct_cell.font = ppl_r_font
+        ppl_pct_cell.fill = ppl_r_fill
         row_num += 1
         
     for row_idx in range(6, row_num):
@@ -417,6 +524,14 @@ def generate_report_1(public_dir):
     ws3["A1"].font = Font(size=12, bold=True)
     ws3["A3"] = f"Hari/Tanggal : {date_title}"
     ws3["A4"] = f"Pukul        : {time_title}"
+    ws3["D3"] = "Target Harian:"
+    ws3["D3"].font = target_label_font
+    ws3["E3"] = f"{daily_target_pct}% per hari"
+    ws3["E3"].font = target_value_font
+    ws3["D4"] = f"Target Hari Ini (H-{elapsed_days}):"
+    ws3["D4"].font = target_label_font
+    ws3["E4"] = f"{cumulative_target_pct:.2f}%"
+    ws3["E4"].font = target_value_font
     
     pml_headers = ["NO", "NAMA", "KECAMATAN", "KOSEKA", "TARGET", "OPEN", "DRAFT", "SUBMIT", "REJECT", "APPROVED", "REVOKE", "REALISASI", "REALISASI (%)"]
     ws3.append([])
@@ -443,7 +558,12 @@ def generate_report_1(public_dir):
         ws3.cell(row=r, column=10, value=row["Approved"])
         ws3.cell(row=r, column=11, value=row["Revoke"])
         ws3.cell(row=r, column=12, value=row["Realisasi"])
-        ws3.cell(row=r, column=13, value=row["Realisasi_Pct"]/100).number_format = '0.00%'
+        pml_pct_cell = ws3.cell(row=r, column=13, value=row["Realisasi_Pct"]/100)
+        pml_pct_cell.number_format = '0.00%'
+        # Conditional coloring for PML Realisasi %
+        pml_r_font, pml_r_fill = get_realisasi_color(row["Realisasi_Pct"], cumulative_target_pct)
+        pml_pct_cell.font = pml_r_font
+        pml_pct_cell.fill = pml_r_fill
         row_num += 1
         
     for row_idx in range(6, row_num):
@@ -456,6 +576,14 @@ def generate_report_1(public_dir):
     ws4["A1"].font = Font(size=12, bold=True)
     ws4["A3"] = f"Hari/Tanggal : {date_title}"
     ws4["A4"] = f"Pukul        : {time_title}"
+    ws4["C3"] = "Target Harian:"
+    ws4["C3"].font = target_label_font
+    ws4["D3"] = f"{daily_target_pct}% per hari"
+    ws4["D3"].font = target_value_font
+    ws4["C4"] = f"Target Hari Ini (H-{elapsed_days}):"
+    ws4["C4"].font = target_label_font
+    ws4["D4"] = f"{cumulative_target_pct:.2f}%"
+    ws4["D4"].font = target_value_font
     
     kec_headers = ["NO", "KECAMATAN", "REALISASI (%)", "RANK CHANGE"]
     ws4.append([])
@@ -471,7 +599,12 @@ def generate_report_1(public_dir):
         r = row_num
         ws4.cell(row=r, column=1, value=idx+1)
         ws4.cell(row=r, column=2, value=format_kec_name(row["nama_kec"]))
-        ws4.cell(row=r, column=3, value=row["Realisasi_Pct"]/100).number_format = '0.00%'
+        kec_pct_cell = ws4.cell(row=r, column=3, value=row["Realisasi_Pct"]/100)
+        kec_pct_cell.number_format = '0.00%'
+        # Conditional coloring for Kecamatan Realisasi %
+        kec_r_font, kec_r_fill = get_realisasi_color(row["Realisasi_Pct"], cumulative_target_pct)
+        kec_pct_cell.font = kec_r_font
+        kec_pct_cell.fill = kec_r_fill
         
         change = int(row["Rank_Change"])
         change_str = f"+{change}" if change > 0 else str(change)
