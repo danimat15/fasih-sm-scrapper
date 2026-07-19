@@ -75,6 +75,7 @@ def run_git_commands(timestamp_str):
             "update_data.csv",
             "dashboard_scraped_data.csv",
             "dashboard_scraped_data_morning.csv",
+            "dashboard_scraped_data_morning_prev.csv",
             "dashboard_scraped_data_evening.csv",
             os.path.join("data", "pml_ppl.csv"),
             os.path.join("data", "ringkasan_Assign.csv"),
@@ -82,6 +83,7 @@ def run_git_commands(timestamp_str):
             os.path.join("dashboard", "public", "update_data.csv"),
             os.path.join("dashboard", "public", "dashboard_scraped_data.csv"),
             os.path.join("dashboard", "public", "dashboard_scraped_data_morning.csv"),
+            os.path.join("dashboard", "public", "dashboard_scraped_data_morning_prev.csv"),
             os.path.join("dashboard", "public", "dashboard_scraped_data_evening.csv"),
             os.path.join("dashboard", "public", "pml_ppl.csv"),
             os.path.join("dashboard", "public", "koseka.csv"),
@@ -137,11 +139,17 @@ def save_snapshots_if_needed(public_dir=None):
         
         # Cutoff is 13:00 (1 PM WITA)
         if hour < 13:
-            # If current morning snapshot exists, copy it to morning_prev
+            # If current morning snapshot exists, only copy it to morning_prev if its modification date is not today
             if os.path.exists(morning_dest):
-                shutil.copy2(morning_dest, morning_prev_dest)
-                shutil.copy2(morning_dest, os.path.join(public_dir, "dashboard_scraped_data_morning_prev.csv"))
-                print("Rotated morning snapshot to morning_prev.")
+                import datetime as dt
+                mtime = os.path.getmtime(morning_dest)
+                mtime_dt = dt.datetime.fromtimestamp(mtime, wita_tz)
+                if mtime_dt.date() != now.date():
+                    shutil.copy2(morning_dest, morning_prev_dest)
+                    shutil.copy2(morning_dest, os.path.join(public_dir, "dashboard_scraped_data_morning_prev.csv"))
+                    print("Rotated morning snapshot (from previous day) to morning_prev.")
+                else:
+                    print("Morning snapshot already exists for today. Skipping rotation to morning_prev to avoid overwriting yesterday's data.")
                 
             shutil.copy2(dashboard_scraped_src, morning_dest)
             shutil.copy2(dashboard_scraped_src, os.path.join(public_dir, "dashboard_scraped_data_morning.csv"))
