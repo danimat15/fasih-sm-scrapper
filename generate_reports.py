@@ -7,7 +7,34 @@ from openpyxl.styles import Font, PatternFill, Border, Alignment, Side
 
 # Define WITA timezone (UTC+8)
 wita_tz = datetime.timezone(datetime.timedelta(hours=8))
-START_TIME = datetime.datetime.now(wita_tz)
+
+def get_initial_start_time(wita_tz):
+    default_time = datetime.datetime.now(wita_tz)
+    txt_path = os.path.join("dashboard", "public", "last_updated.txt")
+    if os.path.exists(txt_path):
+        try:
+            with open(txt_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+            if " pukul " in content:
+                date_part, time_part = content.split(" pukul ")
+                time_part = time_part.replace(" WITA", "").strip().replace(":", ".")
+                day_str, month_str, year_str = date_part.split(" ")
+                day = int(day_str)
+                year = int(year_str)
+                months = {
+                    "Januari": 1, "Februari": 2, "Maret": 3, "April": 4, "Mei": 5, "Juni": 6,
+                    "Juli": 7, "Agustus": 8, "September": 9, "Oktober": 10, "November": 11, "Desember": 12
+                }
+                month = months.get(month_str, 7)
+                hour_str, minute_str = time_part.split(".")
+                hour = int(hour_str)
+                minute = int(minute_str)
+                return datetime.datetime(year, month, day, hour, minute, tzinfo=wita_tz)
+        except Exception as e:
+            print(f"Error parsing last_updated.txt for START_TIME: {e}")
+    return default_time
+
+START_TIME = get_initial_start_time(wita_tz)
 
 def get_current_date_str():
     return f"{START_TIME.day} Juli"
