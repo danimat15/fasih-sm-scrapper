@@ -96,6 +96,12 @@ def run_git_commands(timestamp_str):
         json_files = glob.glob(os.path.join("dashboard", "public", "data_mikro", "*.json"))
         files_to_add.extend(json_files)
         
+        # Add all public reports, spreadsheets, and JSON files
+        public_xlsx = glob.glob(os.path.join("dashboard", "public", "*.xlsx"))
+        public_json = glob.glob(os.path.join("dashboard", "public", "*.json"))
+        files_to_add.extend(public_xlsx)
+        files_to_add.extend(public_json)
+        
         # Check which files exist and add them
         existing_files = [f for f in files_to_add if os.path.exists(f)]
         if not existing_files:

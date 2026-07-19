@@ -208,7 +208,7 @@ export default function MonitoringPage() {
             Refresh
           </button>
           <a
-            href="/Report_Dashboard_Latest.xlsx"
+            href={reportType === "pagi" ? "/Report_Dashboard_Morning.xlsx" : "/Report_Dashboard_Evening.xlsx"}
             download
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-lg bg-orange-500 hover:bg-orange-600 text-white shadow transition-all cursor-pointer"
           >

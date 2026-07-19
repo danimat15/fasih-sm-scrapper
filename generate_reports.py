@@ -152,6 +152,7 @@ def generate_report_1(public_dir):
     print("Generating Report 1 (Dashboard Leaderboards)...")
     
     hour = START_TIME.hour
+    report_type = "pagi" if hour < 13 else "sore"
     scraped_file = "dashboard_scraped_data.csv"
     morning_file = "dashboard_scraped_data_morning.csv"
     morning_prev_file = "dashboard_scraped_data_morning_prev.csv"
@@ -663,8 +664,14 @@ def generate_report_1(public_dir):
             ws.column_dimensions[col_letter].width = max(max_len + 3, 10)
             
     # Save Report 1
-    wb.save(os.path.join(public_dir, "Report_Dashboard_Latest.xlsx"))
-    print("Report 1 generated successfully!")
+    latest_path = os.path.join(public_dir, "Report_Dashboard_Latest.xlsx")
+    wb.save(latest_path)
+    
+    # Also save specific copy for morning/evening
+    specific_filename = "Report_Dashboard_Morning.xlsx" if report_type == "pagi" else "Report_Dashboard_Evening.xlsx"
+    specific_path = os.path.join(public_dir, specific_filename)
+    shutil.copy2(latest_path, specific_path)
+    print(f"Report 1 saved to {latest_path} and {specific_path}")
     
     # Save a JSON file for the frontend to render the report page reactive tables easily
     report_json_path = os.path.join(public_dir, "report_data.json")
@@ -1378,10 +1385,17 @@ def generate_report_2(public_dir):
         
     dest_path_research = os.path.join("research", "fasih-dashboard-se2026", f"Monev Pendataan SE2026 {date_formatted}.xlsx")
     dest_path_public = os.path.join(public_dir, "Monev_Pendataan_SE2026_Latest.xlsx")
-    
     wb.save(dest_path_public)
+    
+    # Also save specific copy for morning/evening
+    hour = START_TIME.hour
+    report_type = "pagi" if hour < 13 else "sore"
+    specific_filename = "Monev_Pendataan_SE2026_Morning.xlsx" if report_type == "pagi" else "Monev_Pendataan_SE2026_Evening.xlsx"
+    specific_path = os.path.join(public_dir, specific_filename)
+    shutil.copy2(dest_path_public, specific_path)
+    
     shutil.copy2(dest_path_public, dest_path_research)
-    print(f"Report 2 saved to {dest_path_public} and {dest_path_research}")
+    print(f"Report 2 saved to {dest_path_public}, {specific_path} and {dest_path_research}")
     
     # Save Rekap as JSON for the frontend
     import json
