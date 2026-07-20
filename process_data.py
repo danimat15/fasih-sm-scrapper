@@ -120,6 +120,9 @@ def run_git_commands(timestamp_str):
         print(f"Committing changes with message: '{commit_msg}'...")
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
         
+        print("Pulling latest remote changes (rebase) before pushing...")
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
+        
         print("Pushing to GitHub...")
         subprocess.run(["git", "push"], check=True)
         print("Git push completed successfully!")

@@ -413,7 +413,7 @@ def navigate_to_survey(page):
         if page.locator("text=PENDATAAN").count() > 0:
             print("  Already on survey page. Clicking PENDATAAN...")
             pendataan_btn = page.locator("text=PENDATAAN").first
-            pendataan_btn.wait_for(state="visible", timeout=15000)
+            pendataan_btn.wait_for(state="visible", timeout=30000)
             pendataan_btn.click()
             page.wait_for_timeout(2000)
             return
@@ -423,18 +423,31 @@ def navigate_to_survey(page):
 
     # Not on survey page — go to /app and search
     if not page.url.endswith("/app"):
-        page.goto("https://fasih-sm.bps.go.id/app")
-        page.wait_for_timeout(2000)
+        page.goto("https://fasih-sm.bps.go.id/app", timeout=60000)
+        page.wait_for_timeout(3000)
 
     print("  Searching for 'SENSUS EKONOMI 2026'...")
     search_input = page.locator('input[placeholder="Cari survei..."]')
-    search_input.wait_for(state="visible", timeout=30000)
+    
+    max_search_retries = 3
+    for s_attempt in range(1, max_search_retries + 1):
+        try:
+            search_input.wait_for(state="visible", timeout=60000)
+            break
+        except Exception as e:
+            if s_attempt == max_search_retries:
+                print(f"  ERROR: Input search 'Cari survei...' belum muncul setelah {max_search_retries}x mencoba: {e}")
+                raise
+            print(f"  [Attempt {s_attempt}/{max_search_retries}] Search input belum muncul (timeout), mencoba reload halaman /app...")
+            page.goto("https://fasih-sm.bps.go.id/app", timeout=60000)
+            page.wait_for_timeout(5000)
+
     search_input.fill("SENSUS EKONOMI 2026")
     search_input.press("Enter")
     page.wait_for_timeout(2500)
 
     survey_items = page.locator("text=SENSUS EKONOMI 2026")
-    survey_items.first.wait_for(state="visible", timeout=30000)
+    survey_items.first.wait_for(state="visible", timeout=60000)
     survey_item = None
     for idx in range(survey_items.count()):
         item = survey_items.nth(idx)
@@ -457,7 +470,7 @@ def navigate_to_survey(page):
 
     print("  Navigating to PENDATAAN period...")
     pendataan_btn = page.locator("text=PENDATAAN").first
-    pendataan_btn.wait_for(state="visible", timeout=30000)
+    pendataan_btn.wait_for(state="visible", timeout=60000)
     pendataan_btn.click()
     page.wait_for_timeout(3000)
 
