@@ -39,6 +39,7 @@ def convert_excel_to_json():
         {"file": "Agregat_Kecamatan_USAHA KELUARGA.xlsx", "out": "kecamatan_usaha_keluarga.json"},
         {"file": "Agregat_Petugas_USAHA KELUARGA.xlsx", "out": "petugas_usaha_keluarga.json"},
         {"file": "Agregat_Kecamatan_JARINGAN USAHA.xlsx", "out": "kecamatan_jaringan_usaha.json"},
+        {"file": "Agregat_Petugas_JARINGAN USAHA.xlsx", "out": "petugas_jaringan_usaha.json"},
         
         # Sektor Pertanian vs Non-Pertanian
         {"file": "Agregat_Kecamatan_PROPORSI PERTANIAN NON PERTANIA.xlsx", "out": "kecamatan_sektor_usaha.json"},

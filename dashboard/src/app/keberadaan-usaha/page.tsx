@@ -31,6 +31,7 @@ export default function KeberadaanUsahaPage() {
   const [kecKeluarga, setKecKeluarga] = useState<any[]>([]);
   const [petugasKeluarga, setPetugasKeluarga] = useState<any[]>([]);
   const [kecJaringan, setKecJaringan] = useState<any[]>([]);
+  const [petugasJaringan, setPetugasJaringan] = useState<any[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +47,16 @@ export default function KeberadaanUsahaPage() {
     async function loadData() {
       try {
         setLoading(true);
-        const [kpRes, ppRes, kkRes, pkRes, kjRes] = await Promise.all([
+        const [kpRes, ppRes, kkRes, pkRes, kjRes, pjRes] = await Promise.all([
           fetch("/data_mikro/kecamatan_usaha_perusahaan.json"),
           fetch("/data_mikro/petugas_usaha_perusahaan.json"),
           fetch("/data_mikro/kecamatan_usaha_keluarga.json"),
           fetch("/data_mikro/petugas_usaha_keluarga.json"),
           fetch("/data_mikro/kecamatan_jaringan_usaha.json"),
+          fetch("/data_mikro/petugas_jaringan_usaha.json"),
         ]);
 
-        if (!kpRes.ok || !ppRes.ok || !kkRes.ok || !pkRes.ok || !kjRes.ok) {
+        if (!kpRes.ok || !ppRes.ok || !kkRes.ok || !pkRes.ok || !kjRes.ok || !pjRes.ok) {
           throw new Error("Gagal mengambil data keberadaan usaha.");
         }
 
@@ -63,12 +65,14 @@ export default function KeberadaanUsahaPage() {
         const kk = await kkRes.json();
         const pk = await pkRes.json();
         const kj = await kjRes.json();
+        const pj = await pjRes.json();
 
         setKecPerusahaan(kp);
         setPetugasPerusahaan(pp);
         setKecKeluarga(kk);
         setPetugasKeluarga(pk);
         setKecJaringan(kj);
+        setPetugasJaringan(pj);
       } catch (err: any) {
         console.error(err);
         setError(err.message || "Terjadi kesalahan saat memuat data.");
@@ -143,12 +147,17 @@ export default function KeberadaanUsahaPage() {
   // Unique list of subdistricts for filter
   const subdistricts = useMemo(() => {
     const list = new Set<string>();
-    const activePetugasList = activeSubTab === "perusahaan" ? petugasPerusahaan : petugasKeluarga;
+    const activePetugasList =
+      activeSubTab === "perusahaan"
+        ? petugasPerusahaan
+        : activeSubTab === "keluarga"
+        ? petugasKeluarga
+        : petugasJaringan;
     activePetugasList.forEach((p) => {
       if (p.nama_kec) list.add(p.nama_kec);
     });
     return Array.from(list).sort();
-  }, [petugasPerusahaan, petugasKeluarga, activeSubTab]);
+  }, [petugasPerusahaan, petugasKeluarga, petugasJaringan, activeSubTab]);
 
   // Prepare current dataset based on filters and active selection
   const currentDataset = useMemo(() => {
@@ -158,12 +167,11 @@ export default function KeberadaanUsahaPage() {
     } else if (activeSubTab === "keluarga") {
       data = activeLevel === "kecamatan" ? [...kecKeluarga] : [...petugasKeluarga];
     } else {
-      // Jaringan Usaha (Hanya level Kecamatan)
-      data = [...kecJaringan];
+      data = activeLevel === "kecamatan" ? [...kecJaringan] : [...petugasJaringan];
     }
 
     // Filter by Kecamatan dropdown for Petugas level
-    if (activeLevel === "petugas" && kecFilter !== "all" && activeSubTab !== "jaringan") {
+    if (activeLevel === "petugas" && kecFilter !== "all") {
       data = data.filter((row) => row.nama_kec === kecFilter);
     }
 
@@ -176,9 +184,12 @@ export default function KeberadaanUsahaPage() {
         );
       } else {
         data = data.filter((row) =>
-          (row["Nama PCL"] || "").toLowerCase().includes(q) ||
-          (row["Email PCL"] || "").toLowerCase().includes(q) ||
-          (row["Nama PML"] || "").toLowerCase().includes(q)
+          (row["Nama Petugas"] || row["Nama PCL"] || "").toLowerCase().includes(q) ||
+          (row["Email Petugas"] || row["Email PCL"] || "").toLowerCase().includes(q) ||
+          (row["Nama PML"] || "").toLowerCase().includes(q) ||
+          (row["Jabatan"] || "").toLowerCase().includes(q) ||
+          (row["koseka"] || "").toLowerCase().includes(q) ||
+          (row["nama_kec"] || "").toLowerCase().includes(q)
         );
       }
     }
@@ -195,7 +206,7 @@ export default function KeberadaanUsahaPage() {
     }
 
     return data;
-  }, [kecPerusahaan, petugasPerusahaan, kecKeluarga, petugasKeluarga, kecJaringan, activeSubTab, activeLevel, searchQuery, kecFilter, sortConfig]);
+  }, [kecPerusahaan, petugasPerusahaan, kecKeluarga, petugasKeluarga, kecJaringan, petugasJaringan, activeSubTab, activeLevel, searchQuery, kecFilter, sortConfig]);
 
   const requestSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
@@ -219,21 +230,40 @@ export default function KeberadaanUsahaPage() {
     let rows: string[][] = [];
 
     if (activeSubTab === "jaringan") {
-      headers = ["Nama Kecamatan", "Tunggal", "Kantor Pusat", "Cabang", "Perwakilan", "Pabrik", "Unit Pembantu"];
-      rows = currentDataset.map((r) => [
-        r["Nama Kecamatan"] || "",
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"]),
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"]),
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"]),
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"]),
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"]),
-        String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"])
-      ]);
+      const isKec = activeLevel === "kecamatan";
+      headers = isKec
+        ? ["Nama Kecamatan", "Tunggal", "Kantor Pusat", "Cabang", "Perwakilan", "Pabrik", "Unit Pembantu"]
+        : ["Nama Petugas", "Email Petugas", "Jabatan", "Koseka", "Kecamatan", "Tunggal", "Kantor Pusat", "Cabang", "Perwakilan", "Pabrik", "Unit Pembantu"];
+      rows = currentDataset.map((r) =>
+        isKec
+          ? [
+              r["Nama Kecamatan"] || "",
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"] || 0)
+            ]
+          : [
+              r["Nama Petugas"] || r["Nama PCL"] || "",
+              r["Email Petugas"] || r["Email PCL"] || "",
+              r["Jabatan"] || "",
+              r["koseka"] || "",
+              r["nama_kec"] || r["Nama Kecamatan"] || "",
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"] || 0),
+              String(r["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"] || 0)
+            ]
+      );
     } else {
       const isKec = activeLevel === "kecamatan";
       headers = isKec
         ? ["Nama Kecamatan", "Target Prelist", "Ditemukan", "Baru", "Tutup", "Ganda", "Tidak Ditemukan"]
-        : ["Nama PCL", "Email PCL", "Nama PML", "Kecamatan", "Target Prelist", "Ditemukan", "Baru", "Tutup", "Ganda", "Tidak Ditemukan"];
+        : ["Nama Petugas", "Email Petugas", "Jabatan", "Koseka", "Kecamatan", "Target Prelist", "Ditemukan", "Baru", "Tutup", "Ganda", "Tidak Ditemukan"];
       
       const detKey = activeSubTab === "perusahaan" ? "BKU" : "KELUARGA";
       
@@ -256,10 +286,11 @@ export default function KeberadaanUsahaPage() {
               String(tdVal)
             ]
           : [
-              r["Nama PCL"] || "",
-              r["Email PCL"] || "",
-              r["Nama PML"] || "",
-              r["nama_kec"] || "",
+              r["Nama Petugas"] || r["Nama PCL"] || "",
+              r["Email Petugas"] || r["Email PCL"] || "",
+              r["Jabatan"] || "",
+              r["koseka"] || "",
+              r["nama_kec"] || r["Nama Kecamatan"] || "",
               String(targetVal),
               String(ditVal),
               String(barVal),
@@ -487,26 +518,24 @@ export default function KeberadaanUsahaPage() {
                   >
                     Ringkasan Kecamatan
                   </button>
-                  {activeSubTab !== "jaringan" && (
-                    <button
-                      onClick={() => {
-                        setActiveLevel("petugas");
-                        setSortConfig(null);
-                      }}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                        activeLevel === "petugas"
-                          ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-900"
-                      }`}
-                    >
-                      Detail Petugas
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      setActiveLevel("petugas");
+                      setSortConfig(null);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      activeLevel === "petugas"
+                        ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-900"
+                    }`}
+                  >
+                    Detail Petugas
+                  </button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   {/* Kecamatan selector for Petugas level */}
-                  {activeLevel === "petugas" && activeSubTab !== "jaringan" && (
+                  {activeLevel === "petugas" && (
                     <div className="relative shrink-0">
                       <select
                         value={kecFilter}
@@ -544,15 +573,29 @@ export default function KeberadaanUsahaPage() {
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30 text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                       {activeSubTab === "jaringan" ? (
-                        <>
-                          <th className="px-6 py-4">Kecamatan</th>
-                          <th className="px-6 py-4">Tunggal</th>
-                          <th className="px-6 py-4">Kantor Pusat</th>
-                          <th className="px-6 py-4">Cabang</th>
-                          <th className="px-6 py-4">Perwakilan</th>
-                          <th className="px-6 py-4">Pabrik</th>
-                          <th className="px-6 py-4">Unit Pembantu</th>
-                        </>
+                        activeLevel === "kecamatan" ? (
+                          <>
+                            <th className="px-6 py-4">Kecamatan</th>
+                            <th className="px-6 py-4">Tunggal</th>
+                            <th className="px-6 py-4">Kantor Pusat</th>
+                            <th className="px-6 py-4">Cabang</th>
+                            <th className="px-6 py-4">Perwakilan</th>
+                            <th className="px-6 py-4">Pabrik</th>
+                            <th className="px-6 py-4">Unit Pembantu</th>
+                          </>
+                        ) : (
+                          <>
+                            <th className="px-6 py-4">Nama Petugas</th>
+                            <th className="px-6 py-4">Jabatan & Koseka</th>
+                            <th className="px-6 py-4">Kecamatan</th>
+                            <th className="px-6 py-4">Tunggal</th>
+                            <th className="px-6 py-4">Kantor Pusat</th>
+                            <th className="px-6 py-4">Cabang</th>
+                            <th className="px-6 py-4">Perwakilan</th>
+                            <th className="px-6 py-4">Pabrik</th>
+                            <th className="px-6 py-4">Unit Pembantu</th>
+                          </>
+                        )
                       ) : activeLevel === "kecamatan" ? (
                         <>
                           <th className="px-6 py-4">Kecamatan</th>
@@ -578,6 +621,7 @@ export default function KeberadaanUsahaPage() {
                       ) : (
                         <>
                           <th className="px-6 py-4">Nama Petugas</th>
+                          <th className="px-6 py-4">Jabatan & Koseka</th>
                           <th className="px-6 py-4">Kecamatan</th>
                           <th className="px-6 py-4">Target Prelist</th>
                           <th className="px-6 py-4">Ditemukan</th>
@@ -599,20 +643,59 @@ export default function KeberadaanUsahaPage() {
                     ) : (
                       paginatedData.map((row, idx) => {
                         if (activeSubTab === "jaringan") {
-                          if (row["Nama Kecamatan"] === "NaN" || !row["Nama Kecamatan"]) return null;
-                          return (
-                            <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                              <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
-                                {row["Nama Kecamatan"]}
-                              </td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"] || 0}</td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"] || 0}</td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"] || 0}</td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"] || 0}</td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"] || 0}</td>
-                              <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"] || 0}</td>
-                            </tr>
-                          );
+                          if (activeLevel === "kecamatan") {
+                            if (row["Nama Kecamatan"] === "NaN" || !row["Nama Kecamatan"]) return null;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">
+                                  {row["Nama Kecamatan"]}
+                                </td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"] || 0}</td>
+                              </tr>
+                            );
+                          } else {
+                            const namaPetugas = row["Nama Petugas"] || row["Nama PCL"];
+                            const emailPetugas = row["Email Petugas"] || row["Email PCL"];
+                            const jabatan = row["Jabatan"];
+                            const koseka = row["koseka"];
+                            const namaKec = row.nama_kec || row["Nama Kecamatan"];
+
+                            if (!namaPetugas || namaPetugas === "NaN") return null;
+                            return (
+                              <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                                <td className="px-6 py-4">
+                                  <div className="font-bold text-slate-900 dark:text-white">{namaPetugas}</div>
+                                  {emailPetugas && <div className="text-[10px] text-slate-400 font-normal">{emailPetugas}</div>}
+                                </td>
+                                <td className="px-6 py-4">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {jabatan && (
+                                      <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold">
+                                        {jabatan}
+                                      </span>
+                                    )}
+                                    {koseka && (
+                                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                                        {koseka}
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 text-slate-500">{namaKec || "-"}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Tunggal"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Kantor Pusat"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Cabang"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Perwakilan"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Pabrik"] || 0}</td>
+                                <td className="px-6 py-4">{row["JUMLAH USAHA BERDASARKAN JARINGAN USAHA - Unit Pembantu"] || 0}</td>
+                              </tr>
+                            );
+                          }
                         }
 
                         const detKey = activeSubTab === "perusahaan" ? "BKU" : "KELUARGA";
@@ -639,14 +722,34 @@ export default function KeberadaanUsahaPage() {
                             </tr>
                           );
                         } else {
-                          if (row["Nama PCL"] === "NaN" || !row["Nama PCL"]) return null;
+                          const namaPetugas = row["Nama Petugas"] || row["Nama PCL"];
+                          const emailPetugas = row["Email Petugas"] || row["Email PCL"];
+                          const jabatan = row["Jabatan"];
+                          const koseka = row["koseka"];
+                          const namaKec = row.nama_kec || row["Nama Kecamatan"];
+
+                          if (!namaPetugas || namaPetugas === "NaN") return null;
                           return (
                             <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                               <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900 dark:text-white">{row["Nama PCL"]}</div>
-                                <div className="text-[10px] text-slate-400 font-normal">{row["Email PCL"]}</div>
+                                <div className="font-bold text-slate-900 dark:text-white">{namaPetugas}</div>
+                                {emailPetugas && <div className="text-[10px] text-slate-400 font-normal">{emailPetugas}</div>}
                               </td>
-                              <td className="px-6 py-4 text-slate-500">{row.nama_kec}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {jabatan && (
+                                    <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold">
+                                      {jabatan}
+                                    </span>
+                                  )}
+                                  {koseka && (
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                                      {koseka}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-500">{namaKec || "-"}</td>
                               <td className="px-6 py-4 font-bold">{targetVal}</td>
                               <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-semibold">{ditVal}</td>
                               <td className="px-6 py-4 text-orange-500 font-medium">+{barVal}</td>

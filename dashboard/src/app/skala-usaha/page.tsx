@@ -21,9 +21,12 @@ interface SkalaUsahaRow {
   "Kode Kecamatan"?: string;
   "Nama Kecamatan"?: string;
   "nama_kec"?: string;
+  "Nama Petugas"?: string;
   "Nama PCL"?: string;
+  "Email Petugas"?: string;
   "Email PCL"?: string;
   "Nama PML"?: string;
+  "Jabatan"?: string;
   "koseka"?: string;
   "Jumlah Prelist UB": number;
   "Jumlah UB yang Berhasil Didata": number;
@@ -152,14 +155,17 @@ export default function SkalaUsahaPage() {
         data = data.filter((row) => row.nama_kec === kecFilter);
       }
 
-      // Search filter for PCL / PML
+      // Search filter for Petugas
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         data = data.filter(
           (row) =>
-            row["Nama PCL"]?.toLowerCase().includes(query) ||
-            row["Email PCL"]?.toLowerCase().includes(query) ||
-            row["Nama PML"]?.toLowerCase().includes(query)
+            (row["Nama Petugas"] || row["Nama PCL"] || "").toLowerCase().includes(query) ||
+            (row["Email Petugas"] || row["Email PCL"] || "").toLowerCase().includes(query) ||
+            (row["Nama PML"] || "").toLowerCase().includes(query) ||
+            (row["Jabatan"] || "").toLowerCase().includes(query) ||
+            (row["koseka"] || "").toLowerCase().includes(query) ||
+            (row["nama_kec"] || "").toLowerCase().includes(query)
         );
       }
 
@@ -226,9 +232,10 @@ export default function SkalaUsahaPage() {
       ]);
     } else {
       headers = [
-        "Nama PCL",
-        "Email PCL",
-        "Nama PML",
+        "Nama Petugas",
+        "Email Petugas",
+        "Jabatan",
+        "Koseka",
         "Kecamatan",
         "Target UB",
         "Realisasi UB",
@@ -240,18 +247,19 @@ export default function SkalaUsahaPage() {
         "Total Realisasi"
       ];
       rows = dataToExport.map((r) => [
-        r["Nama PCL"] || "",
-        r["Email PCL"] || "",
-        r["Nama PML"] || "",
-        r["nama_kec"] || "",
-        String(r["Jumlah Prelist UB"]),
-        String(r["Jumlah UB yang Berhasil Didata"]),
-        String(r["Persentase UB yang Berhasil Didata"]),
-        String(r["Jumlah Prelist UMKM (UM + UMK)"]),
-        String(r["Jumlah UMKM yang Berhasil Didata (UM + UMK)"]),
-        String(r["Persentase UMKM yang Berhasil Didata (UM + UMK)"]),
-        String(r["Jumlah Prelist UB"] + r["Jumlah Prelist UMKM (UM + UMK)"]),
-        String(r["Total Usaha Didata (UB + UM + UMK)"])
+        r["Nama Petugas"] || r["Nama PCL"] || "",
+        r["Email Petugas"] || r["Email PCL"] || "",
+        r["Jabatan"] || "",
+        r["koseka"] || "",
+        r["nama_kec"] || r["Nama Kecamatan"] || "",
+        String(r["Jumlah Prelist UB"] || 0),
+        String(r["Jumlah UB yang Berhasil Didata"] || 0),
+        String(r["Persentase UB yang Berhasil Didata"] || 0),
+        String(r["Jumlah Prelist UMKM (UM + UMK)"] || 0),
+        String(r["Jumlah UMKM yang Berhasil Didata (UM + UMK)"] || 0),
+        String(r["Persentase UMKM yang Berhasil Didata (UM + UMK)"] || 0),
+        String((r["Jumlah Prelist UB"] || 0) + (r["Jumlah Prelist UMKM (UM + UMK)"] || 0)),
+        String(r["Total Usaha Didata (UB + UM + UMK)"] || 0)
       ]);
     }
 
@@ -507,6 +515,7 @@ export default function SkalaUsahaPage() {
                       ) : (
                         <>
                           <th className="px-6 py-4">Nama Petugas</th>
+                          <th className="px-6 py-4">Jabatan & Koseka</th>
                           <th className="px-6 py-4">Kecamatan</th>
                           <th className="px-6 py-4 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800" onClick={() => requestSort("Jumlah Prelist UB")}>
                             UB Target <ArrowUpDown className="w-3 h-3 inline ml-1 text-slate-400" />
@@ -578,14 +587,34 @@ export default function SkalaUsahaPage() {
                             </tr>
                           );
                         } else {
-                          if (row["Nama PCL"] === "NaN" || !row["Nama PCL"]) return null;
+                          const namaPetugas = row["Nama Petugas"] || row["Nama PCL"];
+                          const emailPetugas = row["Email Petugas"] || row["Email PCL"];
+                          const jabatan = row["Jabatan"];
+                          const koseka = row["koseka"];
+                          const namaKec = row.nama_kec || row["Nama Kecamatan"];
+
+                          if (!namaPetugas || namaPetugas === "NaN") return null;
                           return (
                             <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                               <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900 dark:text-white">{row["Nama PCL"]}</div>
-                                <div className="text-[10px] text-slate-400 font-normal">{row["Email PCL"]}</div>
+                                <div className="font-bold text-slate-900 dark:text-white">{namaPetugas}</div>
+                                {emailPetugas && <div className="text-[10px] text-slate-400 font-normal">{emailPetugas}</div>}
                               </td>
-                              <td className="px-6 py-4 text-slate-500">{row.nama_kec}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {jabatan && (
+                                    <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold">
+                                      {jabatan}
+                                    </span>
+                                  )}
+                                  {koseka && (
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                                      {koseka}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-500">{namaKec || "-"}</td>
                               <td className="px-6 py-4 font-semibold">{ubTarget}</td>
                               <td className="px-6 py-4">{ubReal}</td>
                               <td className="px-6 py-4">

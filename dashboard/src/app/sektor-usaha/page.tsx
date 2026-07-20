@@ -126,9 +126,12 @@ export default function SektorUsahaPage() {
         );
       } else {
         data = data.filter((row) =>
-          (row["Nama PCL"] || "").toLowerCase().includes(q) ||
-          (row["Email PCL"] || "").toLowerCase().includes(q) ||
-          (row["Nama PML"] || "").toLowerCase().includes(q)
+          (row["Nama Petugas"] || row["Nama PCL"] || "").toLowerCase().includes(q) ||
+          (row["Email Petugas"] || row["Email PCL"] || "").toLowerCase().includes(q) ||
+          (row["Nama PML"] || "").toLowerCase().includes(q) ||
+          (row["Jabatan"] || "").toLowerCase().includes(q) ||
+          (row["koseka"] || "").toLowerCase().includes(q) ||
+          (row["nama_kec"] || "").toLowerCase().includes(q)
         );
       }
     }
@@ -171,7 +174,7 @@ export default function SektorUsahaPage() {
     const isKec = activeLevel === "kecamatan";
     headers = isKec
       ? ["Nama Kecamatan", "Prelist Usaha", "Jumlah UTP ST2023", "Ditemukan Pertanian", "Ditemukan Non-Pertanian", "Baru Pertanian", "Baru Non-Pertanian"]
-      : ["Nama PCL", "Email PCL", "Nama PML", "Kecamatan", "Prelist Usaha", "Jumlah UTP ST2023", "Ditemukan Pertanian", "Ditemukan Non-Pertanian", "Baru Pertanian", "Baru Non-Pertanian"];
+      : ["Nama Petugas", "Email Petugas", "Jabatan", "Koseka", "Kecamatan", "Prelist Usaha", "Jumlah UTP ST2023", "Ditemukan Pertanian", "Ditemukan Non-Pertanian", "Baru Pertanian", "Baru Non-Pertanian"];
     
     rows = currentDataset.map((r) => {
       const preVal = r["Jumlah Prelist Usaha SE2026"] || 0;
@@ -183,7 +186,19 @@ export default function SektorUsahaPage() {
 
       return isKec
         ? [r["Nama Kecamatan"] || "", String(preVal), String(utpVal), String(ditP), String(ditNP), String(barP), String(barNP)]
-        : [r["Nama PCL"] || "", r["Email PCL"] || "", r["Nama PML"] || "", r["nama_kec"] || "", String(preVal), String(utpVal), String(ditP), String(ditNP), String(barP), String(barNP)];
+        : [
+            r["Nama Petugas"] || r["Nama PCL"] || "",
+            r["Email Petugas"] || r["Email PCL"] || "",
+            r["Jabatan"] || "",
+            r["koseka"] || "",
+            r["nama_kec"] || r["Nama Kecamatan"] || "",
+            String(preVal),
+            String(utpVal),
+            String(ditP),
+            String(ditNP),
+            String(barP),
+            String(barNP)
+          ];
     });
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -404,6 +419,7 @@ export default function SektorUsahaPage() {
                       ) : (
                         <>
                           <th className="px-6 py-4">Nama Petugas</th>
+                          <th className="px-6 py-4">Jabatan & Koseka</th>
                           <th className="px-6 py-4">Kecamatan</th>
                           <th className="px-6 py-4">Target Prelist</th>
                           <th className="px-6 py-4">UTP ST2023</th>
@@ -447,14 +463,34 @@ export default function SektorUsahaPage() {
                             </tr>
                           );
                         } else {
-                          if (row["Nama PCL"] === "NaN" || !row["Nama PCL"]) return null;
+                          const namaPetugas = row["Nama Petugas"] || row["Nama PCL"];
+                          const emailPetugas = row["Email Petugas"] || row["Email PCL"];
+                          const jabatan = row["Jabatan"];
+                          const koseka = row["koseka"];
+                          const namaKec = row.nama_kec || row["Nama Kecamatan"];
+
+                          if (!namaPetugas || namaPetugas === "NaN") return null;
                           return (
                             <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                               <td className="px-6 py-4">
-                                <div className="font-bold text-slate-900 dark:text-white">{row["Nama PCL"]}</div>
-                                <div className="text-[10px] text-slate-400 font-normal">{row["Email PCL"]}</div>
+                                <div className="font-bold text-slate-900 dark:text-white">{namaPetugas}</div>
+                                {emailPetugas && <div className="text-[10px] text-slate-400 font-normal">{emailPetugas}</div>}
                               </td>
-                              <td className="px-6 py-4 text-slate-500">{row.nama_kec}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  {jabatan && (
+                                    <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 text-[10px] font-bold">
+                                      {jabatan}
+                                    </span>
+                                  )}
+                                  {koseka && (
+                                    <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 text-[10px]">
+                                      {koseka}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-slate-500">{namaKec || "-"}</td>
                               <td className="px-6 py-4 font-semibold">{preVal}</td>
                               <td className="px-6 py-4">{utpVal}</td>
                               <td className="px-6 py-4 text-emerald-600 dark:text-emerald-400 font-bold">{ditP}</td>
