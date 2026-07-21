@@ -114,8 +114,25 @@ def is_next_disabled(next_btn):
     return False
 
 
+def simulate_human_activity(page):
+    """Simulate subtle human mouse movement and scrolling to avoid bot detection."""
+    try:
+        if random.random() < 0.5:
+            x = random.randint(150, 750)
+            y = random.randint(150, 550)
+            page.mouse.move(x, y)
+        if random.random() < 0.35:
+            scroll_y = random.randint(120, 350)
+            page.mouse.wheel(0, scroll_y)
+            page.wait_for_timeout(random.randint(250, 600))
+            page.mouse.wheel(0, -scroll_y)
+    except Exception:
+        pass
+
+
 def _delay(page, fast_ms, normal_ms_range):
     """Apply delay: fixed ms in fast mode, random range otherwise."""
+    simulate_human_activity(page)
     if STEALTH_SPEED_UP:
         page.wait_for_timeout(fast_ms)
     else:
@@ -791,7 +808,7 @@ def run_unified_scraper():
     scraped_data_dict = {}
 
     with sync_playwright() as p:
-        print("Launching Chromium browser in headed mode...")
+        print("Launching Chromium browser in headed mode with stealth parameters...")
         browser = p.chromium.launch(
             headless=False,
             args=[
@@ -802,15 +819,38 @@ def run_unified_scraper():
                 "--disable-backgrounding-occluded-windows",
                 "--disable-renderer-backgrounding",
                 "--disable-ipc-flooding-protection",
+                "--disable-blink-features=AutomationControlled",
             ],
         )
 
+        context_kwargs = {
+            "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            "viewport": {"width": 1366, "height": 768},
+            "locale": "id-ID",
+            "timezone_id": "Asia/Makassar",
+        }
+
         if os.path.exists(auth_file):
             print(f"Loading session from '{auth_file}'...")
-            context = browser.new_context(storage_state=auth_file)
+            context = browser.new_context(storage_state=auth_file, **context_kwargs)
         else:
             print("No saved session state found. Creating new context.")
-            context = browser.new_context()
+            context = browser.new_context(**context_kwargs)
+
+        context.add_init_script("""
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => undefined
+            });
+            window.chrome = {
+                runtime: {}
+            };
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['id-ID', 'id', 'en-US', 'en']
+            });
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [1, 2, 3, 4, 5]
+            });
+        """)
 
         page = context.new_page()
 
@@ -1298,6 +1338,13 @@ def run_unified_scraper():
 
                         page_num += 1
                         _delay(page, 1200, (2000, 3500))
+
+                        # Periodic anti-bot cooldown pause every 10 pages
+                        if page_num % 10 == 0:
+                            cooldown_sec = random.randint(7, 14)
+                            print(f"  [Anti-Bot Cooldown] Resting for {cooldown_sec}s at page {page_num} to prevent bot detection...")
+                            simulate_human_activity(page)
+                            page.wait_for_timeout(cooldown_sec * 1000)
                     else:
                         print("  Reached last page of category.")
                         break
