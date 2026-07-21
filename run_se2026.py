@@ -735,7 +735,8 @@ def run_unified_scraper():
             print("Invalid input, defaulting to: FULL (Dashboard + Ambil Data).")
             run_mode = "full"
 
-    use_fresh = "--fresh" in sys.argv
+    emails = []
+    reverse_order = False
 
     if run_mode in ["full", "data"]:
         emails = load_emails(email_file)
@@ -830,7 +831,7 @@ def run_unified_scraper():
     scraped_data_dict = {}
 
     with sync_playwright() as p:
-        print("Launching Chromium browser in headed mode...")
+        print("Launching Chromium browser in headed mode with stealth parameters...")
         browser = p.chromium.launch(
             headless=False,
             args=[
@@ -841,52 +842,36 @@ def run_unified_scraper():
                 "--disable-backgrounding-occluded-windows",
                 "--disable-renderer-backgrounding",
                 "--disable-ipc-flooding-protection",
-                "--start-maximized",
+                "--disable-blink-features=AutomationControlled",
             ],
         )
 
         context_kwargs = {
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-            "viewport": None,  # Use maximized window size
+            "viewport": {"width": 1366, "height": 768},
             "locale": "id-ID",
             "timezone_id": "Asia/Makassar",
         }
 
-        load_saved_session = not use_fresh and os.path.exists(auth_file)
-        if load_saved_session:
-            print(f"Loading saved session from '{auth_file}'...")
-            try:
-                context = browser.new_context(storage_state=auth_file, **context_kwargs)
-            except Exception as e:
-                print(f"Warning: Could not load saved session state ({e}). Creating clean context...")
-                context = browser.new_context(**context_kwargs)
+        if os.path.exists(auth_file):
+            print(f"Loading session from '{auth_file}'...")
+            context = browser.new_context(storage_state=auth_file, **context_kwargs)
         else:
-            print("Creating clean browser context (no old session state loaded)...")
+            print("No saved session state found. Creating new context.")
             context = browser.new_context(**context_kwargs)
 
         context.add_init_script("""
-            delete window.cdc_adoQpoasnfa76pfcbl_Array;
-            delete window.cdc_adoQpoasnfa76pfcbl_Promise;
-            delete window.cdc_adoQpoasnfa76pfcbl_Symbol;
-            delete window.cdc_adoQpoasnfa76pfcbl_Object;
-
             Object.defineProperty(navigator, 'webdriver', {
                 get: () => undefined
             });
             window.chrome = {
-                runtime: {},
-                loadTimes: function() {},
-                csi: function() {},
-                app: {}
+                runtime: {}
             };
             Object.defineProperty(navigator, 'languages', {
                 get: () => ['id-ID', 'id', 'en-US', 'en']
             });
             Object.defineProperty(navigator, 'plugins', {
                 get: () => [1, 2, 3, 4, 5]
-            });
-            Object.defineProperty(navigator, 'permissions', {
-                get: () => ({ query: () => Promise.resolve({ state: 'granted' }) })
             });
         """)
 
@@ -911,35 +896,28 @@ def run_unified_scraper():
             start_manual_wait = time.time()
             last_msg_time = 0
             while True:
-                try:
-                    cur_url = page.url
-                    has_rekap = page.locator("button:has-text('Rekap Petugas')").count() > 0
-                    has_pengawas_pencacah = page.locator("button:has-text('Pengawas'), button:has-text('Pencacah')").count() > 0
-                    has_pendataan = page.locator("text=PENDATAAN").count() > 0
-                    has_table = page.locator("table").count() > 0
+                cur_url = page.url
+                has_rekap = page.locator("button:has-text('Rekap Petugas')").count() > 0
+                has_pengawas_pencacah = page.locator("button:has-text('Pengawas'), button:has-text('Pencacah')").count() > 0
+                has_pendataan = page.locator("text=PENDATAAN").count() > 0
+                has_table = page.locator("table").count() > 0
 
-                    if has_rekap or has_pengawas_pencacah or (SURVEY_ID in cur_url and (has_pendataan or has_table)):
-                        print(f"\n[LOKASI TERDETEKSI!] Anda sudah berada di lokasi target survei! (URL: {cur_url})")
-                        if has_pendataan and not has_rekap and not has_pengawas_pencacah and run_mode != "data":
-                            try:
-                                print("  Mengklik tombol PENDATAAN...")
-                                page.locator("text=PENDATAAN").first.click()
-                                page.wait_for_timeout(2000)
-                            except Exception:
-                                pass
-                        break
+                if has_rekap or has_pengawas_pencacah or (SURVEY_ID in cur_url and (has_pendataan or has_table)):
+                    print(f"\n[LOKASI TERDETEKSI!] Anda sudah berada di lokasi target survei! (URL: {cur_url})")
+                    if has_pendataan and not has_rekap and not has_pengawas_pencacah and run_mode != "data":
+                        try:
+                            print("  Mengklik tombol PENDATAAN...")
+                            page.locator("text=PENDATAAN").first.click()
+                            page.wait_for_timeout(2000)
+                        except Exception:
+                            pass
+                    break
 
-                    elapsed = int(time.time() - start_manual_wait)
-                    if elapsed - last_msg_time >= 5:
-                        print(f"  [Waiting {elapsed}s] Memantau posisi Anda di browser... Silakan login & arahkan ke survei.")
-                        last_msg_time = elapsed
-                    page.wait_for_timeout(1000)
-                except Exception as loop_err:
-                    err_str = str(loop_err)
-                    if "closed" in err_str.lower() or "targetclosederror" in err_str.lower():
-                        print("\nBrowser ditutup oleh pengguna. Menghentikan script.")
-                        sys.exit(0)
-                    page.wait_for_timeout(1000)
+                elapsed = int(time.time() - start_manual_wait)
+                if elapsed - last_msg_time >= 5:
+                    print(f"  [Waiting {elapsed}s] Memantau posisi Anda di browser... Silakan login & arahkan ke survei.")
+                    last_msg_time = elapsed
+                page.wait_for_timeout(1000)
 
             try:
                 context.storage_state(path=auth_file)
