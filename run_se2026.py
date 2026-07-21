@@ -830,22 +830,41 @@ def run_unified_scraper():
     scraped_data_dict = {}
 
     with sync_playwright() as p:
-        print("Launching Chromium browser in headed mode with stealth parameters...")
-        browser = p.chromium.launch(
-            headless=False,
-            ignore_default_args=["--enable-automation"],
-            args=[
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-background-timer-throttling",
-                "--disable-backgrounding-occluded-windows",
-                "--disable-renderer-backgrounding",
-                "--disable-ipc-flooding-protection",
-                "--disable-blink-features=AutomationControlled",
-                "--start-maximized",
-            ],
-        )
+        print("Launching Google Chrome browser with stealth parameters...")
+        try:
+            browser = p.chromium.launch(
+                headless=False,
+                channel="chrome",
+                ignore_default_args=["--enable-automation"],
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-background-timer-throttling",
+                    "--disable-backgrounding-occluded-windows",
+                    "--disable-renderer-backgrounding",
+                    "--disable-ipc-flooding-protection",
+                    "--disable-blink-features=AutomationControlled",
+                    "--start-maximized",
+                ],
+            )
+        except Exception:
+            print("Google Chrome not found in standard system path. Falling back to bundled Chromium...")
+            browser = p.chromium.launch(
+                headless=False,
+                ignore_default_args=["--enable-automation"],
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-background-timer-throttling",
+                    "--disable-backgrounding-occluded-windows",
+                    "--disable-renderer-backgrounding",
+                    "--disable-ipc-flooding-protection",
+                    "--disable-blink-features=AutomationControlled",
+                    "--start-maximized",
+                ],
+            )
 
         context_kwargs = {
             "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
