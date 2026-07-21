@@ -735,8 +735,7 @@ def run_unified_scraper():
             print("Invalid input, defaulting to: FULL (Dashboard + Ambil Data).")
             run_mode = "full"
 
-    emails = []
-    reverse_order = False
+    use_fresh = "--fresh" in sys.argv
 
     if run_mode in ["full", "data"]:
         emails = load_emails(email_file)
