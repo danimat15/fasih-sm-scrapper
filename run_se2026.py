@@ -764,9 +764,6 @@ def run_unified_scraper():
             except Exception:
                 print("Invalid input, defaulting to: TOP TO BOTTOM (Normal).")
 
-        if reverse_order:
-            emails.reverse()
-
         use_fresh = "--fresh" in sys.argv
         completed_emails = []
         failed_emails = []
@@ -788,6 +785,32 @@ def run_unified_scraper():
                         print(f"Loaded checkpoint: {len(completed_emails)} completed, {len(failed_emails)} previously failed.")
             except Exception as e:
                 print(f"Warning reading checkpoint: {e}. Starting fresh.")
+
+    nav_manual = True
+    if "--manual" in sys.argv or "-m" in sys.argv:
+        nav_manual = True
+        print("Navigation mode: MANUAL / GUIDED USER NAVIGATION.")
+    elif "--auto" in sys.argv:
+        nav_manual = False
+        print("Navigation mode: AUTOMATED LOGIN & NAVIGATION.")
+    else:
+        print("\nPilih metode login & navigasi:")
+        print("  1. Manual / Guided (DIREKOMENDASIKAN - Anda login & buka lokasi di browser, script mendeteksi - BEBAS BOT DETECT)")
+        print("  2. Otomatis (Script mencoba login SSO & navigasi otomatis)")
+        try:
+            n_choice = input("Masukkan pilihan (1/2) [1]: ").strip()
+            if n_choice == "2":
+                nav_manual = False
+                print("Navigasi: OTOMATIS.")
+            else:
+                nav_manual = True
+                print("Navigasi: MANUAL / GUIDED USER NAVIGATION.")
+        except (KeyboardInterrupt, SystemExit):
+            print("\nExiting script.")
+            sys.exit(0)
+        except Exception:
+            nav_manual = True
+            print("Defaulting to: MANUAL / GUIDED USER NAVIGATION.")
 
     # Status mapping table
     status_mapping = {
@@ -854,104 +877,151 @@ def run_unified_scraper():
 
         page = context.new_page()
 
-        # 2. Automated Login via SSO
-        max_attempts = 5
-        for attempt in range(1, max_attempts + 1):
+        # 2. Automated or Guided Manual Login & Navigation
+        if nav_manual:
+            print("\n" + "=" * 80)
+            print("  MODE NAVIGASI MANUAL / GUIDED USER AKTIF!")
+            print("  Silakan login & buka lokasi survei di browser Chromium yang terbuka:")
+            print("    - Untuk Dashboard: Buka survei SENSUS EKONOMI 2026 -> PENDATAAN -> Rekap Petugas")
+            print("    - Untuk Ambil Data: Buka halaman tabel data survei PENDATAAN")
+            print("  Script secara otomatis mendeteksi saat Anda telah tiba di halaman target!")
+            print("=" * 80 + "\n")
+
+            # Go to home page if fresh browser
             try:
-                print(f"Navigating to BPS FASIH website (Attempt {attempt}/{max_attempts})...")
-                page.goto("https://fasih-sm.bps.go.id/", timeout=120000)
-                break
-            except Exception as e:
-                print(f"Error navigating: {e}")
-                if attempt == max_attempts:
-                    raise
-                wait_sec = attempt * 10
-                print(f"Waiting {wait_sec}s before retrying...")
-                page.wait_for_timeout(wait_sec * 1000)
-        page.wait_for_timeout(3000)
+                page.goto("https://fasih-sm.bps.go.id/", timeout=60000)
+            except Exception:
+                pass
 
-        if "sso.bps.go.id" in page.url or page.locator("#username").count() > 0 or page.locator("text=Login SSO BPS").count() > 0:
-            print("Login SSO required.")
-            if page.locator("text=Login SSO BPS").count() > 0:
-                print("Clicking 'Login SSO BPS'...")
-                page.locator("text=Login SSO BPS").first.click()
-                page.wait_for_timeout(3000)
+            start_manual_wait = time.time()
+            last_msg_time = 0
+            while True:
+                cur_url = page.url
+                has_rekap = page.locator("button:has-text('Rekap Petugas')").count() > 0
+                has_pengawas_pencacah = page.locator("button:has-text('Pengawas'), button:has-text('Pencacah')").count() > 0
+                has_pendataan = page.locator("text=PENDATAAN").count() > 0
+                has_table = page.locator("table").count() > 0
 
-            if page.locator("#username").count() > 0:
-                print(f"Filling credentials for user: {username}...")
-                page.locator("#username").fill(username)
-                page.locator("#password").fill(password)
-                kc_login_btn = page.locator("#kc-login")
-                if kc_login_btn.count() > 0:
-                    kc_login_btn.click()
-                else:
-                    print("Warning: Tombol '#kc-login' tidak ditemukan! Mencoba submit via Enter...")
-                    page.locator("#password").press("Enter")
-
-                print("Waiting for login response...")
-                is_otp_page = False
-                for _ in range(15):
-                    page.wait_for_timeout(1000)
-                    if "/app" in page.url:
-                        break
-                    for sel in ["input#otp", "input#code", "input#totp", "input[name='otp']", "input[name='code']"]:
-                        if page.locator(sel).count() > 0:
-                            is_otp_page = True
-                            break
-                    if is_otp_page:
-                        break
-
-                    try:
-                        body_text = page.locator("body").text_content().lower()
-                        if "otp" in body_text or "authenticator" in body_text or "kode verifikasi" in body_text or "verification code" in body_text:
-                            is_otp_page = True
-                            break
-                    except Exception:
-                        pass
-
-                if is_otp_page:
-                    print("\n" + "=" * 80)
-                    print("OTP / VERIFIKASI LOGIN TERDETEKSI!")
-                    print("Silakan masukkan kode OTP / Verifikasi secara manual pada browser Chromium yang terbuka.")
-                    print("Script akan otomatis melanjutkan setelah Anda berhasil masuk ke Dashboard FASIH.")
-                    print("=" * 80 + "\n")
-
-                    start_wait = time.time()
-                    last_print = 0
-                    MAX_OTP_WAIT = 600  # 10 menit
-                    while True:
-                        if time.time() - start_wait > MAX_OTP_WAIT:
-                            print("\nOTP timeout (10 menit)! Silakan jalankan ulang script.")
-                            sys.exit(1)
-                        if "/app" in page.url:
-                            print("Successfully logged in via OTP!")
-                            break
-                        if "sso.bps.go.id" not in page.url and "/app" not in page.url:
+                if has_rekap or has_pengawas_pencacah or (SURVEY_ID in cur_url and (has_pendataan or has_table)):
+                    print(f"\n[LOKASI TERDETEKSI!] Anda sudah berada di lokasi target survei! (URL: {cur_url})")
+                    if has_pendataan and not has_rekap and not has_pengawas_pencacah and run_mode != "data":
+                        try:
+                            print("  Mengklik tombol PENDATAAN...")
+                            page.locator("text=PENDATAAN").first.click()
                             page.wait_for_timeout(2000)
-                            if "/app" in page.url:
-                                break
-                            print("Warning: Left BPS SSO but did not reach app. Current URL: " + page.url)
-                            break
-                        elapsed = int(time.time() - start_wait)
-                        if elapsed - last_print >= 10:
-                            print(f"  [Waiting {elapsed}s] Menunggu input OTP manual di browser...")
-                            last_print = elapsed
+                        except Exception:
+                            pass
+                    break
+
+                elapsed = int(time.time() - start_manual_wait)
+                if elapsed - last_msg_time >= 5:
+                    print(f"  [Waiting {elapsed}s] Memantau posisi Anda di browser... Silakan login & arahkan ke survei.")
+                    last_msg_time = elapsed
+                page.wait_for_timeout(1000)
+
+            try:
+                context.storage_state(path=auth_file)
+                print(f"Session state saved to '{auth_file}'")
+            except Exception:
+                pass
+        else:
+            max_attempts = 5
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    print(f"Navigating to BPS FASIH website (Attempt {attempt}/{max_attempts})...")
+                    page.goto("https://fasih-sm.bps.go.id/", timeout=120000)
+                    break
+                except Exception as e:
+                    print(f"Error navigating: {e}")
+                    if attempt == max_attempts:
+                        raise
+                    wait_sec = attempt * 10
+                    print(f"Waiting {wait_sec}s before retrying...")
+                    page.wait_for_timeout(wait_sec * 1000)
+            page.wait_for_timeout(3000)
+
+            if "sso.bps.go.id" in page.url or page.locator("#username").count() > 0 or page.locator("text=Login SSO BPS").count() > 0:
+                print("Login SSO required.")
+                if page.locator("text=Login SSO BPS").count() > 0:
+                    print("Clicking 'Login SSO BPS'...")
+                    page.locator("text=Login SSO BPS").first.click()
+                    page.wait_for_timeout(3000)
+
+                if page.locator("#username").count() > 0:
+                    print(f"Filling credentials for user: {username}...")
+                    page.locator("#username").fill(username)
+                    page.locator("#password").fill(password)
+                    kc_login_btn = page.locator("#kc-login")
+                    if kc_login_btn.count() > 0:
+                        kc_login_btn.click()
+                    else:
+                        print("Warning: Tombol '#kc-login' tidak ditemukan! Mencoba submit via Enter...")
+                        page.locator("#password").press("Enter")
+
+                    print("Waiting for login response...")
+                    is_otp_page = False
+                    for _ in range(15):
                         page.wait_for_timeout(1000)
-                else:
-                    page.wait_for_timeout(2000)
+                        if "/app" in page.url:
+                            break
+                        for sel in ["input#otp", "input#code", "input#totp", "input[name='otp']", "input[name='code']"]:
+                            if page.locator(sel).count() > 0:
+                                is_otp_page = True
+                                break
+                        if is_otp_page:
+                            break
 
-        try:
-            page.wait_for_url("**/app**", timeout=45000)
-            print("Successfully reached the app workspace!")
-        except Exception:
-            print("Warning: Redirection timeout. Checking current URL: " + page.url)
+                        try:
+                            body_text = page.locator("body").text_content().lower()
+                            if "otp" in body_text or "authenticator" in body_text or "kode verifikasi" in body_text or "verification code" in body_text:
+                                is_otp_page = True
+                                break
+                        except Exception:
+                            pass
 
-        context.storage_state(path=auth_file)
-        print(f"Session state saved to '{auth_file}'")
+                    if is_otp_page:
+                        print("\n" + "=" * 80)
+                        print("OTP / VERIFIKASI LOGIN TERDETEKSI!")
+                        print("Silakan masukkan kode OTP / Verifikasi secara manual pada browser Chromium yang terbuka.")
+                        print("Script akan otomatis melanjutkan setelah Anda berhasil masuk ke Dashboard FASIH.")
+                        print("=" * 80 + "\n")
 
-        # 3. Navigate to survey PENDATAAN
-        print("Navigating to SE2026 survey PENDATAAN...")
-        navigate_to_survey(page)
+                        start_wait = time.time()
+                        last_print = 0
+                        MAX_OTP_WAIT = 600  # 10 menit
+                        while True:
+                            if time.time() - start_wait > MAX_OTP_WAIT:
+                                print("\nOTP timeout (10 menit)! Silakan jalankan ulang script.")
+                                sys.exit(1)
+                            if "/app" in page.url:
+                                print("Successfully logged in via OTP!")
+                                break
+                            if "sso.bps.go.id" not in page.url and "/app" not in page.url:
+                                page.wait_for_timeout(2000)
+                                if "/app" in page.url:
+                                    break
+                                print("Warning: Left BPS SSO but did not reach app. Current URL: " + page.url)
+                                break
+                            elapsed = int(time.time() - start_wait)
+                            if elapsed - last_print >= 10:
+                                print(f"  [Waiting {elapsed}s] Menunggu input OTP manual di browser...")
+                                last_print = elapsed
+                            page.wait_for_timeout(1000)
+                    else:
+                        page.wait_for_timeout(2000)
+
+            try:
+                page.wait_for_url("**/app**", timeout=45000)
+                print("Successfully reached the app workspace!")
+            except Exception:
+                print("Warning: Redirection timeout. Checking current URL: " + page.url)
+
+            context.storage_state(path=auth_file)
+            print(f"Session state saved to '{auth_file}'")
+
+            # 3. Navigate to survey PENDATAAN
+            print("Navigating to SE2026 survey PENDATAAN...")
+            navigate_to_survey(page)
 
         # ---------------------------------------------------------------
         if run_mode in ["full", "dashboard"]:
