@@ -702,38 +702,68 @@ def run_unified_scraper():
         print("Error: USERNAME or PASSWORD not set in .env file.")
         sys.exit(1)
 
-    run_mode = "full"
-    if "--dashboard" in sys.argv:
+    run_mode = "manual_dashboard"
+    if "--manual-dashboard" in sys.argv or "--parse-manual" in sys.argv or "--manual" in sys.argv:
+        run_mode = "manual_dashboard"
+        print("Run mode: DASHBOARD MANUAL (Parse data_manual_dashboard.md)")
+    elif "--web-dashboard" in sys.argv or "--scrape-dashboard" in sys.argv:
         run_mode = "dashboard"
-        print("Run mode: DASHBOARD ONLY")
+        print("Run mode: DASHBOARD WEB SCRAPER")
+    elif "--dashboard" in sys.argv:
+        run_mode = "manual_dashboard"
+        print("Run mode: DASHBOARD MANUAL (Parse data_manual_dashboard.md)")
     elif "--data" in sys.argv or "--scrape" in sys.argv or "--ambil-data" in sys.argv:
         run_mode = "data"
         print("Run mode: AMBIL DATA ONLY")
     elif "--full" in sys.argv:
         run_mode = "full"
-        print("Run mode: FULL (Dashboard + Ambil Data)")
+        print("Run mode: FULL (Dashboard Manual + Ambil Data)")
     else:
         print("\nPilih mode eksekusi:")
-        print("  1. Run Full (Dashboard & Ambil Data - default)")
-        print("  2. Run Dashboard Saja")
-        print("  3. Run Ambil Data Saja")
+        print("  1. Run Dashboard (Parse Manual data_manual_dashboard.md - DIREKOMENDASIKAN) [Default]")
+        print("  2. Run Dashboard (Scraper Web Browser)")
+        print("  3. Run Ambil Data Detail Saja")
+        print("  4. Run Full (Dashboard Manual & Ambil Data)")
         try:
-            choice = input("Masukkan pilihan (1/2/3) [1]: ").strip()
+            choice = input("Masukkan pilihan (1/2/3/4) [1]: ").strip()
             if choice == "2":
                 run_mode = "dashboard"
-                print("Run mode: DASHBOARD ONLY")
+                print("Run mode: DASHBOARD (Scraper Web Browser)")
             elif choice == "3":
                 run_mode = "data"
                 print("Run mode: AMBIL DATA ONLY")
-            else:
+            elif choice == "4":
                 run_mode = "full"
-                print("Run mode: FULL (Dashboard + Ambil Data)")
+                print("Run mode: FULL (Dashboard Manual + Ambil Data)")
+            else:
+                run_mode = "manual_dashboard"
+                print("Run mode: DASHBOARD (Parse Manual data_manual_dashboard.md)")
         except (KeyboardInterrupt, SystemExit):
             print("\nExiting script.")
             sys.exit(0)
         except Exception:
-            print("Invalid input, defaulting to: FULL (Dashboard + Ambil Data).")
-            run_mode = "full"
+            print("Invalid input, defaulting to: DASHBOARD (Parse Manual data_manual_dashboard.md).")
+            run_mode = "manual_dashboard"
+
+    if run_mode == "manual_dashboard":
+        import parse_manual_dashboard
+        time_arg = None
+        for arg in sys.argv[1:]:
+            if not arg.startswith("-"):
+                time_arg = arg
+                break
+        if not time_arg and sys.stdin.isatty():
+            try:
+                inp = input("Masukkan jam/waktu pengambilan data (misal: '09.35' atau '22 Juli 2026 pukul 09.35 WITA') [Default WITA sekarang]: ")
+                time_arg = inp.strip() if inp.strip() else None
+            except Exception:
+                time_arg = None
+        
+        parse_manual_dashboard.process_manual_data(timestamp_input=time_arg)
+        print("\n" + "=" * 50)
+        print("MANUAL DASHBOARD PROCESSING COMPLETED SUCCESSFULLY")
+        print("=" * 50)
+        return
 
     emails = []
     reverse_order = False
