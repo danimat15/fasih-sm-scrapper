@@ -1,6 +1,6 @@
-# Panduan Pemrosesan Data Scraping Manual FASIH
+# Panduan Pemrosesan Data Scraping Manual FASIH & Auto-Push GitHub
 
-Panduan ini digunakan ketika Anda melakukan scraping manual data FASIH dan ingin meng-update dashboard secara cepat.
+Panduan ini digunakan ketika Anda melakukan scraping manual data FASIH dan ingin langsung memperbarui data dashboard serta melakukan **otomatis push ke GitHub**.
 
 ---
 
@@ -14,38 +14,39 @@ Panduan ini digunakan ketika Anda melakukan scraping manual data FASIH dan ingin
 
 ## Langkah 2: Jalankan Script Pemrosesan Data
 
-Buka Terminal / Command Prompt di folder project `scraper-fasih-sm`, lalu jalankan salah satu perintah berikut:
+Buka Terminal / Command Prompt di folder project `scraper-fasih-sm`, lalu jalankan perintah berikut:
 
-### Opsi A: Menggunakan Script Khusus (Disarankan)
+### Opsi A: Menggunakan Format Singkat Jam (Paling Praktis)
+Cukup masukkan jamnya saja (misal `09.35` atau `09:35`), script akan otomatis membentuk format tanggal dan jam hari ini:
 
-Gunakan perintah ini untuk memproses data manual dan menyertakan jam/waktu pengambilan data secara spesifik:
+```bash
+python parse_manual_dashboard.py "09.35"
+```
+
+---
+
+### Opsi B: Menggunakan Format Lengkap Tanggal & Jam
+Jika ingin menentukan tanggal lengkap secara spesifik:
 
 ```bash
 python parse_manual_dashboard.py "22 Juli 2026 pukul 09.35 WITA"
 ```
 
-> **Catatan:** Ganti `"22 Juli 2026 pukul 09.35 WITA"` sesuai dengan tanggal dan jam saat Anda mengambil data manual tersebut.
-
 ---
 
-### Opsi B: Menggunakan Pipeline Utama `process_data.py`
-
-Jika Anda ingin menjalankan seluruh pipeline data sekaligus (termasuk pemrosesan data mikro, mapping, dan git sync jika diaktifkan):
+### Opsi C: Tanpa Argumen (Menggunakan Jam WITA Saat Ini)
+Jika dijalankan tanpa argumen, script akan menggunakan jam saat ini secara otomatis:
 
 ```bash
-python process_data.py
+python parse_manual_dashboard.py
 ```
-
-*Script `process_data.py` akan secara otomatis mendeteksi keberadaan file `data_manual_dashboard.md` dan memprosesnya ke dashboard.*
 
 ---
 
-## Apa yang Terjadi Setelah Script Dijalankan?
+## Apa yang Terjadi Secara Otomatis?
 
-Script akan secara otomatis melakukan:
-1. Mengekstrak seluruh record SLS dan status dari `data_manual_dashboard.md`.
-2. Melengkapi nama petugas, jabatan (PPL/PML), kecamatan, Koseka, dan status prioritas SLS.
-3. Memperbarui file `dashboard_scraped_data.csv` dan menyalinnya ke folder `dashboard/public/dashboard_scraped_data.csv`.
-4. Memperbarui snapshot pagi (`dashboard_scraped_data_morning.csv`) atau sore sesuai jam pengesetan.
-5. Memperbarui catatan waktu terakhir update pada file `dashboard/public/last_updated.txt`.
-6. Dashboard Next.js akan langsung menampilkan data terbaru tanpa perlu restart server.
+Ketika perintah di atas dijalankan:
+1. **Konversi Data**: Teks dari `data_manual_dashboard.md` diekstrak menjadi `dashboard_scraped_data.csv` lengkap dengan nama petugas, jabatan, kecamatan, Koseka, dan flag prioritas.
+2. **Update Dashboard Public**: Berkas CSV, snapshot pagi/sore, dan `last_updated.txt` diperbarui di folder `dashboard/public/`.
+3. **Auto-Push ke GitHub**: Script secara otomatis melakukan `git add`, `git commit -m "Update data: <waktu>"`, `git pull --rebase`, dan **`git push` ke GitHub (`origin/main`)**.
+4. **Dashboard Deployed Live**: Dashboard live (misal di Vercel/Server) akan otomatis ter-update mengikuti repository GitHub.
