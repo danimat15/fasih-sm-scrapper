@@ -100,6 +100,12 @@ def run_git_commands(timestamp_str):
         json_files = glob.glob(os.path.join("dashboard", "public", "data_mikro", "*.json"))
         files_to_add.extend(json_files)
         
+        anomali_json = glob.glob(os.path.join("dashboard", "public", "anomali", "*.json"))
+        files_to_add.extend(anomali_json)
+
+        research_xlsx = glob.glob(os.path.join("research", "fasih-dashboard-se2026", "*.xlsx"))
+        files_to_add.extend(research_xlsx)
+        
         # Add all public reports, spreadsheets, and JSON files
         public_xlsx = glob.glob(os.path.join("dashboard", "public", "*.xlsx"))
         public_json = glob.glob(os.path.join("dashboard", "public", "*.json"))

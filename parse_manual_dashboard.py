@@ -242,6 +242,12 @@ def process_manual_data(md_path="data_manual_dashboard.md", output_csv="dashboar
         shutil.copy2(output_csv, dest_csv)
         print(f"Copied '{output_csv}' to '{dest_csv}'.")
 
+        # Copy reference data CSVs if available
+        for ref_file in ["pml_ppl.csv", "koseka.csv", "ringkasan_Assign.csv", "ringkasan_Progres.csv"]:
+            src_path = os.path.join("data", ref_file)
+            if os.path.exists(src_path):
+                shutil.copy2(src_path, os.path.join(public_dir, ref_file))
+
         # Handle snapshots based on cutoff time (13.00)
         process_data.save_snapshots_if_needed(public_dir)
 
@@ -250,6 +256,23 @@ def process_manual_data(md_path="data_manual_dashboard.md", output_csv="dashboar
         with open(timestamp_file, "w", encoding="utf-8") as tf:
             tf.write(timestamp_str)
         print(f"Wrote timestamp '{timestamp_str}' to '{timestamp_file}'.")
+
+        # Convert Excel data mikro to JSON if available
+        try:
+            import process_data_mikro
+            print("\nConverting Excel data mikro to JSON...")
+            process_data_mikro.convert_excel_to_json()
+        except Exception as json_err:
+            print(f"Warning: Could not convert Excel data mikro to JSON: {json_err}")
+
+        # Process anomaly data if available
+        try:
+            if os.path.exists(os.path.join("data", "anomali")):
+                import process_anomali
+                print("\nProcessing anomaly data...")
+                process_anomali.main()
+        except Exception as anom_err:
+            print(f"Warning: Could not process anomaly data: {anom_err}")
 
         # Regenerate monitoring reports & Excel summary spreadsheets
         try:
