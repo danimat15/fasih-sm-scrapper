@@ -77,6 +77,10 @@ def run_git_commands(timestamp_str):
             "dashboard_scraped_data_morning.csv",
             "dashboard_scraped_data_morning_prev.csv",
             "dashboard_scraped_data_evening.csv",
+            "data_manual_dashboard.md",
+            "parse_manual_dashboard.py",
+            "process_data.py",
+            "PANDUAN_SCRAPING_MANUAL.md",
             os.path.join("data", "pml_ppl.csv"),
             os.path.join("data", "ringkasan_Assign.csv"),
             os.path.join("data", "ringkasan_Progres.csv"),
@@ -120,8 +124,8 @@ def run_git_commands(timestamp_str):
         print(f"Committing changes with message: '{commit_msg}'...")
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
         
-        print("Pulling latest remote changes (rebase) before pushing...")
-        subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=False)
+        print("Pulling latest remote changes (rebase with ours strategy) before pushing...")
+        subprocess.run(["git", "pull", "--rebase", "-X", "ours", "origin", "main"], check=False)
         
         print("Pushing to GitHub...")
         subprocess.run(["git", "push"], check=True)
@@ -544,7 +548,16 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
         return False
 
     # 2b. Process dashboard scraped data
-    process_dashboard_scraped_data(priority_sls)
+    if os.path.exists("data_manual_dashboard.md"):
+        try:
+            import parse_manual_dashboard
+            print("Found 'data_manual_dashboard.md'. Processing manual dashboard data...")
+            parse_manual_dashboard.process_manual_data()
+        except Exception as manual_err:
+            print(f"Warning: Failed to process manual dashboard data: {manual_err}")
+            process_dashboard_scraped_data(priority_sls)
+    else:
+        process_dashboard_scraped_data(priority_sls)
 
     # 3. Copy to Next.js dashboard public folder & write timestamp
     public_dir = os.path.join("dashboard", "public")
