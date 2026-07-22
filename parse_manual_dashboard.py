@@ -251,6 +251,14 @@ def process_manual_data(md_path="data_manual_dashboard.md", output_csv="dashboar
             tf.write(timestamp_str)
         print(f"Wrote timestamp '{timestamp_str}' to '{timestamp_file}'.")
 
+        # Regenerate monitoring reports & Excel summary spreadsheets
+        try:
+            import generate_reports
+            print("\nRegenerating monitoring reports and summary spreadsheets...")
+            generate_reports.main()
+        except Exception as report_err:
+            print(f"Warning: Could not generate monitoring reports: {report_err}")
+
     # Automatically commit and push to GitHub
     if auto_push:
         process_data.run_git_commands(timestamp_str)
