@@ -605,12 +605,24 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
                 shutil.copy2(progres_src, os.path.join(public_dir, "ringkasan_Progres.csv"))
                 print(f"Copied '{progres_src}' to dashboard public folder.")
             
-            # Generate and write timestamp
-            timestamp = get_wita_timestamp()
+            # Generate and write timestamp (preserve existing if present)
             timestamp_file = os.path.join(public_dir, "last_updated.txt")
-            with open(timestamp_file, "w", encoding="utf-8") as tf:
-                tf.write(timestamp)
-            print(f"Wrote timestamp '{timestamp}' to '{timestamp_file}'.")
+            existing_ts = ""
+            if os.path.exists(timestamp_file):
+                try:
+                    with open(timestamp_file, "r", encoding="utf-8") as tf:
+                        existing_ts = tf.read().strip()
+                except Exception:
+                    existing_ts = ""
+            
+            if existing_ts:
+                timestamp = existing_ts
+                print(f"Preserved existing timestamp '{timestamp}' in '{timestamp_file}'.")
+            else:
+                timestamp = get_wita_timestamp()
+                with open(timestamp_file, "w", encoding="utf-8") as tf:
+                    tf.write(timestamp)
+                print(f"Wrote timestamp '{timestamp}' to '{timestamp_file}'.")
             
             # Convert Excel data mikro to JSON
             try:
