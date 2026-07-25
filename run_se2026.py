@@ -718,6 +718,9 @@ def run_unified_scraper():
     elif "--full" in sys.argv:
         run_mode = "full"
         print("Run mode: FULL (Dashboard Manual + Ambil Data)")
+    elif any(not arg.startswith("-") for arg in sys.argv[1:]) or not sys.stdin.isatty():
+        run_mode = "manual_dashboard"
+        print("Run mode: DASHBOARD MANUAL (Parse data_manual_dashboard.md)")
     else:
         print("\nPilih mode eksekusi:")
         print("  1. Run Dashboard (Parse Manual data_manual_dashboard.md - DIREKOMENDASIKAN) [Default]")
