@@ -103,12 +103,12 @@ def run_git_commands(timestamp_str):
         anomali_json = glob.glob(os.path.join("dashboard", "public", "anomali", "*.json"))
         files_to_add.extend(anomali_json)
 
-        research_xlsx = glob.glob(os.path.join("research", "fasih-dashboard-se2026", "*.xlsx"))
+        research_xlsx = glob.glob(os.path.join("research", "**", "*.xlsx"), recursive=True)
         files_to_add.extend(research_xlsx)
         
         # Add all public reports, spreadsheets, and JSON files
-        public_xlsx = glob.glob(os.path.join("dashboard", "public", "*.xlsx"))
-        public_json = glob.glob(os.path.join("dashboard", "public", "*.json"))
+        public_xlsx = glob.glob(os.path.join("dashboard", "public", "**", "*.xlsx"), recursive=True)
+        public_json = glob.glob(os.path.join("dashboard", "public", "**", "*.json"), recursive=True)
         files_to_add.extend(public_xlsx)
         files_to_add.extend(public_json)
         
@@ -130,9 +130,19 @@ def run_git_commands(timestamp_str):
         print(f"Committing changes with message: '{commit_msg}'...")
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
         
+        # Stage any leftover tracked changes before pull/rebase to avoid working tree conflicts
+        subprocess.run(["git", "add", "-A"], check=False)
+        diff_leftover = subprocess.run(["git", "diff", "--cached", "--quiet"])
+        if diff_leftover.returncode != 0:
+            subprocess.run(["git", "commit", "-m", f"Chore: stage remaining outputs ({timestamp_str})"], check=False)
+
         print("Pulling latest remote changes (rebase with ours strategy) before pushing...")
-        subprocess.run(["git", "pull", "--rebase", "-X", "ours", "origin", "main"], check=False)
-        
+        pull_res = subprocess.run(["git", "pull", "--rebase", "-X", "ours", "origin", "main"], capture_output=True, text=True)
+        if pull_res.returncode != 0:
+            print(f"Warning: git pull --rebase encountered an issue: {pull_res.stderr.strip()}")
+            subprocess.run(["git", "rebase", "--abort"], capture_output=True)
+            subprocess.run(["git", "pull", "--no-rebase", "-X", "ours", "origin", "main"], capture_output=True)
+
         print("Pushing to GitHub...")
         subprocess.run(["git", "push"], check=True)
         print("Git push completed successfully!")
