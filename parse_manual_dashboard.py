@@ -248,14 +248,14 @@ def process_manual_data(md_path="data_manual_dashboard.md", output_csv="dashboar
             if os.path.exists(src_path):
                 shutil.copy2(src_path, os.path.join(public_dir, ref_file))
 
-        # Handle snapshots based on cutoff time (13.00)
-        process_data.save_snapshots_if_needed(public_dir)
-
         # Update last_updated.txt
         timestamp_file = os.path.join(public_dir, "last_updated.txt")
         with open(timestamp_file, "w", encoding="utf-8") as tf:
             tf.write(timestamp_str)
         print(f"Wrote timestamp '{timestamp_str}' to '{timestamp_file}'.")
+
+        # Handle snapshots based on cutoff time (13.00) or specified timestamp
+        process_data.save_snapshots_if_needed(public_dir, timestamp_str=timestamp_str)
 
         # Convert Excel data mikro to JSON if available
         try:

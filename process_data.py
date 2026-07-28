@@ -2,6 +2,7 @@ import os
 import csv
 import shutil
 import subprocess
+import re
 from datetime import datetime, timezone, timedelta
 
 # Capture execution start time (WITA is UTC+8)
@@ -149,7 +150,7 @@ def run_git_commands(timestamp_str):
     except Exception as e:
         print(f"Warning: Failed to execute Git commands: {e}")
 
-def save_snapshots_if_needed(public_dir=None):
+def save_snapshots_if_needed(public_dir=None, timestamp_str=None):
     if not public_dir:
         public_dir = os.path.join("dashboard", "public")
     
@@ -165,6 +166,21 @@ def save_snapshots_if_needed(public_dir=None):
         # WITA is UTC+8
         now = datetime.now(wita_tz)
         hour = now.hour
+
+        if not timestamp_str:
+            txt_path = os.path.join(public_dir, "last_updated.txt")
+            if os.path.exists(txt_path):
+                try:
+                    with open(txt_path, "r", encoding="utf-8") as f:
+                        timestamp_str = f.read().strip()
+                except Exception:
+                    pass
+                    
+        if timestamp_str:
+            match = re.search(r'pukul\s+(\d{1,2})[\.:]', timestamp_str)
+            if match:
+                hour = int(match.group(1))
+                print(f"Using hour {hour} from timestamp '{timestamp_str}' for snapshot decision.")
         
         # Cutoff is 13:00 (1 PM WITA)
         if hour < 13:

@@ -525,7 +525,7 @@
       "draft": 2,
       "submit": 62,
       "reject": 2,
-      "approved": 302,
+      "approved": 308,
       "progres": 0,
       "realisasi": 366,
       "realisasi_pct": 85.91549295774648
@@ -548,15 +548,15 @@
       "nama": "Asyer Claudio Maralending",
       "kecamatan": "Tahuna Timur",
       "koseka": "Djon",
-      "target": 463,
-      "open": 160,
+      "target": 465,
+      "open": 158,
       "draft": 0,
-      "submit": 0,
+      "submit": 4,
       "reject": 1,
       "approved": 302,
       "progres": 0,
-      "realisasi": 303,
-      "realisasi_pct": 65.44276457883369
+      "realisasi": 307,
+      "realisasi_pct": 66.02150537634408
     },
     {
       "nama": "Avricilya Ester Rangian",
@@ -747,7 +747,7 @@
       "target": 532,
       "open": 149,
       "draft": 0,
-      "submit": 0,
+      "submit": 4,
       "reject": 1,
       "approved": 381,
       "progres": 1,
@@ -835,8 +835,8 @@
       "reject": 1,
       "approved": 335,
       "progres": 0,
-      "realisasi": 336,
-      "realisasi_pct": 69.27835051546391
+      "realisasi": 337,
+      "realisasi_pct": 69.34156378600824
     },
     {
       "nama": "Feybe Ayuninsi Patandra",
@@ -875,7 +875,7 @@
       "draft": 0,
       "submit": 1,
       "reject": 3,
-      "approved": 367,
+      "approved": 368,
       "progres": 0,
       "realisasi": 371,
       "realisasi_pct": 95.37275064267352
@@ -999,7 +999,7 @@
       "target": 479,
       "open": 103,
       "draft": 0,
-      "submit": 1,
+      "submit": 0,
       "reject": 0,
       "approved": 375,
       "progres": 0,
@@ -1052,15 +1052,15 @@
       "nama": "Jeklen Malage Dalita",
       "kecamatan": "Tabukan Tengah",
       "koseka": "Kharis",
-      "target": 457,
-      "open": 197,
+      "target": 459,
+      "open": 195,
       "draft": 0,
       "submit": 0,
       "reject": 2,
       "approved": 258,
       "progres": 0,
-      "realisasi": 260,
-      "realisasi_pct": 56.89277899343544
+      "realisasi": 264,
+      "realisasi_pct": 57.51633986928104
     },
     {
       "nama": "Jeklin Andris",
@@ -1080,15 +1080,15 @@
       "nama": "Jessica Juanita Lombontari",
       "kecamatan": "Tahuna Timur",
       "koseka": "Djon",
-      "target": 459,
-      "open": 222,
-      "draft": 18,
+      "target": 211,
+      "open": 51,
+      "draft": 12,
       "submit": 0,
-      "reject": 16,
-      "approved": 203,
+      "reject": 4,
+      "approved": 144,
       "progres": 0,
-      "realisasi": 219,
-      "realisasi_pct": 47.712418300653596
+      "realisasi": 148,
+      "realisasi_pct": 70.14218009478674
     },
     {
       "nama": "Juanric Eben Misarios Rakinaung",
@@ -1349,7 +1349,7 @@
       "target": 482,
       "open": 144,
       "draft": 0,
-      "submit": 0,
+      "submit": 1,
       "reject": 0,
       "approved": 337,
       "progres": 1,
@@ -1431,14 +1431,14 @@
       "kecamatan": "Tatoareng",
       "koseka": "Sutriwati",
       "target": 326,
-      "open": 60,
+      "open": 57,
       "draft": 36,
       "submit": 0,
       "reject": 0,
       "approved": 229,
       "progres": 1,
-      "realisasi": 230,
-      "realisasi_pct": 70.5521472392638
+      "realisasi": 233,
+      "realisasi_pct": 71.47239263803681
     },
     {
       "nama": "Nolvi Sanggel",
@@ -1501,14 +1501,14 @@
       "kecamatan": "Tabukan Utara",
       "koseka": "Hendri",
       "target": 417,
-      "open": 62,
+      "open": 60,
       "draft": 0,
-      "submit": 0,
+      "submit": 2,
       "reject": 0,
       "approved": 355,
       "progres": 0,
-      "realisasi": 355,
-      "realisasi_pct": 85.13189448441247
+      "realisasi": 357,
+      "realisasi_pct": 85.61151079136691
     },
     {
       "nama": "Oktavianti Tangkabiringan",
@@ -1517,7 +1517,7 @@
       "target": 543,
       "open": 178,
       "draft": 1,
-      "submit": 0,
+      "submit": 2,
       "reject": 2,
       "approved": 359,
       "progres": 3,
@@ -1687,7 +1687,7 @@
       "draft": 0,
       "submit": 9,
       "reject": 0,
-      "approved": 288,
+      "approved": 299,
       "progres": 0,
       "realisasi": 297,
       "realisasi_pct": 78.3641160949868
@@ -1766,15 +1766,15 @@
       "nama": "Sigfried Erik Hontong",
       "kecamatan": "Manganitu Selatan",
       "koseka": "Fin",
-      "target": 566,
-      "open": 120,
+      "target": 570,
+      "open": 97,
       "draft": 0,
       "submit": 1,
       "reject": 0,
       "approved": 445,
       "progres": 0,
-      "realisasi": 446,
-      "realisasi_pct": 78.79858657243817
+      "realisasi": 473,
+      "realisasi_pct": 82.98245614035088
     },
     {
       "nama": "Sintike Susanti Meling Horman",
@@ -1839,7 +1839,7 @@
       "target": 391,
       "open": 121,
       "draft": 0,
-      "submit": 0,
+      "submit": 9,
       "reject": 12,
       "approved": 258,
       "progres": 0,
@@ -2554,7 +2554,7 @@
       "kecamatan": "Tabukan Tengah",
       "realisasi_pct": 63.569784473739276,
       "rank": 15,
-      "rank_change": 0
+      "rank_change": -4
     }
   ],
   "status_muatan": [
