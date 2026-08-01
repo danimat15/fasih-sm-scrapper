@@ -139,6 +139,27 @@ def get_realisasi_color(realisasi_pct, cumulative_target):
     else:
         return amber_font, amber_fill
 
+def get_progres_harian_color(progres_harian_pct):
+    """Return (font, fill) tuple based on progres harian % thresholds:
+    Green: > 1.67%
+    Amber/Yellow: 1.00% to 1.67%
+    Red: < 1.00%
+    Note: progres_harian_pct is in percentage points (e.g., 1.67 for 1.67%).
+    """
+    green_fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
+    green_font = Font(color="006100", bold=True)
+    amber_fill = PatternFill(fill_type="solid", start_color="FFEB9C", end_color="FFEB9C")
+    amber_font = Font(color="9C6500", bold=True)
+    red_fill = PatternFill(fill_type="solid", start_color="FFC7CE", end_color="FFC7CE")
+    red_font = Font(color="9C0006", bold=True)
+    
+    if progres_harian_pct > 1.67:
+        return green_font, green_fill
+    elif progres_harian_pct >= 1.0:
+        return amber_font, amber_fill
+    else:
+        return red_font, red_fill
+
 def format_kec_name(name):
     if not name or pd.isna(name):
         return "-"
@@ -441,6 +462,19 @@ def generate_report_1(public_dir):
         r_font, r_fill = get_realisasi_color(realisasi_pct_val, cumulative_target_pct)
         ws1.cell(row=r, column=17).font = r_font
         ws1.cell(row=r, column=17).fill = r_fill
+        
+        # Conditional coloring for Progres Harian (column 18, 19) & Kecamatan (column 1)
+        prog_harian_pct_val = (prog_harian / target * 100) if target > 0 else 0
+        ph_font, ph_fill = get_progres_harian_color(prog_harian_pct_val)
+        
+        ws1.cell(row=r, column=1).font = ph_font
+        ws1.cell(row=r, column=1).fill = ph_fill
+        
+        ws1.cell(row=r, column=18).font = ph_font
+        ws1.cell(row=r, column=18).fill = ph_fill
+        
+        ws1.cell(row=r, column=19).font = ph_font
+        ws1.cell(row=r, column=19).fill = ph_fill
             
         row_num += 1
         
@@ -469,13 +503,25 @@ def generate_report_1(public_dir):
     for col_idx in [5, 7, 9, 11, 13, 15, 17, 19]:
         ws1.cell(row=r, column=col_idx).number_format = '0.00%'
     
-    # Color the total realisasi % cell too
+    # Color the total realisasi % cell
     total_target = sum(row["Target"] for _, row in merged_kec.iterrows())
     total_realisasi = sum(row["Realisasi_Jml"] for _, row in merged_kec.iterrows())
     total_real_pct = (total_realisasi / total_target * 100) if total_target > 0 else 0
     tr_font, tr_fill = get_realisasi_color(total_real_pct, cumulative_target_pct)
     ws1.cell(row=r, column=17).font = Font(bold=True, color=tr_font.color)
     ws1.cell(row=r, column=17).fill = tr_fill
+    
+    # Color the total progres harian & kecamatan cells
+    total_prog_harian = sum(row["Progres_Harian"] for _, row in merged_kec.iterrows())
+    total_ph_pct = (total_prog_harian / total_target * 100) if total_target > 0 else 0
+    tph_font, tph_fill = get_progres_harian_color(total_ph_pct)
+    
+    ws1.cell(row=r, column=1).font = Font(bold=True, color=tph_font.color)
+    ws1.cell(row=r, column=1).fill = tph_fill
+    ws1.cell(row=r, column=18).font = Font(bold=True, color=tph_font.color)
+    ws1.cell(row=r, column=18).fill = tph_fill
+    ws1.cell(row=r, column=19).font = Font(bold=True, color=tph_font.color)
+    ws1.cell(row=r, column=19).fill = tph_fill
         
     thin_border = Border(
         left=Side(style='thin', color='CCCCCC'),
@@ -488,8 +534,8 @@ def generate_report_1(public_dir):
             cell = ws1.cell(row=row_idx, column=col_idx)
             cell.border = thin_border
             if row_idx == r:
-                # Keep total row orange fill, but preserve realisasi % coloring
-                if col_idx != 17:
+                # Keep total row orange fill, but preserve realisasi %, progres harian & kecamatan coloring
+                if col_idx not in [1, 17, 18, 19]:
                     cell.fill = PatternFill(fill_type="solid", start_color="FCE4D6", end_color="FCE4D6")
                 
     # Sheets for Leaderboards

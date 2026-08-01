@@ -158,6 +158,26 @@ export default function MonitoringPage() {
     );
   };
 
+  const getProgresHarianColorClass = (pct: number) => {
+    const pctVal = pct * 100;
+    if (pctVal > 1.67) {
+      return {
+        text: "text-emerald-600 dark:text-emerald-400 font-extrabold",
+        badge: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+      };
+    } else if (pctVal >= 1.0) {
+      return {
+        text: "text-amber-600 dark:text-amber-500 font-extrabold",
+        badge: "bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20",
+      };
+    } else {
+      return {
+        text: "text-rose-600 dark:text-rose-450 font-extrabold",
+        badge: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20",
+      };
+    }
+  };
+
   const bannerTargetInfo = calculateTargetAndDiff(0);
 
   return (
@@ -269,6 +289,20 @@ export default function MonitoringPage() {
                 </li>
               </ul>
             </li>
+            <li>
+              Aturan Pewarnaan Progres Harian (%) & Nama Kecamatan:
+              <ul className="list-disc list-inside pl-5 mt-0.5 flex flex-col gap-0.5">
+                <li>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Progres harian &gt; 1,67%.
+                </li>
+                <li>
+                  <span className="text-amber-600 dark:text-amber-500 font-extrabold">Kuning</span>: Progres harian 1,00% s.d 1,67%.
+                </li>
+                <li>
+                  <span className="text-rose-500 dark:text-rose-400 font-extrabold">Merah</span>: Progres harian &lt; 1,00%.
+                </li>
+              </ul>
+            </li>
           </ul>
         </div>
       </div>
@@ -322,77 +356,94 @@ export default function MonitoringPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-              {filteredKecamatan.map((item, idx) => (
-                <tr
-                  key={item.kecamatan}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-                >
-                  <td className="px-4 py-3 text-center text-slate-500 dark:text-slate-400 font-medium">
-                    {idx + 1}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                    {item.kecamatan}
-                  </td>
-                  <td className="px-4 py-3 text-center font-medium">{item.target.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-center">{item.sls.toLocaleString()}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.open.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.open_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.draft.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.draft_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.submitted.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.submitted_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.rejected.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.rejected_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.approved.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.approved_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center">{item.revoke.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.revoke_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center font-bold text-orange-600 dark:text-orange-400">{item.realisasi.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center">{renderRealisasiCell(item.realisasi_pct)}</td>
-                  
-                  <td className="px-2 py-3 text-center font-semibold text-emerald-600 dark:text-emerald-400">{item.progres_harian.toLocaleString()}</td>
-                  <td className="px-2 py-3 text-center font-semibold text-emerald-600 dark:text-emerald-400">{formatPct(item.progres_harian_pct)}</td>
-                </tr>
-              ))}
+              {filteredKecamatan.map((item, idx) => {
+                const phColor = getProgresHarianColorClass(item.progres_harian_pct);
+                return (
+                  <tr
+                    key={item.kecamatan}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
+                  >
+                    <td className="px-4 py-3 text-center text-slate-500 dark:text-slate-400 font-medium">
+                      {idx + 1}
+                    </td>
+                    <td className={`px-4 py-3 font-semibold ${phColor.text}`}>
+                      {item.kecamatan}
+                    </td>
+                    <td className="px-4 py-3 text-center font-medium">{item.target.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-center">{item.sls.toLocaleString()}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.open.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.open_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.draft.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.draft_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.submitted.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.submitted_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.rejected.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.rejected_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.approved.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.approved_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center">{item.revoke.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">{formatPct(item.revoke_pct)}</td>
+                    
+                    <td className="px-2 py-3 text-center font-bold text-orange-600 dark:text-orange-400">{item.realisasi.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center">{renderRealisasiCell(item.realisasi_pct)}</td>
+                    
+                    <td className={`px-2 py-3 text-center font-semibold ${phColor.text}`}>{item.progres_harian.toLocaleString()}</td>
+                    <td className="px-2 py-3 text-center">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs whitespace-nowrap ${phColor.badge}`}>
+                        {formatPct(item.progres_harian_pct)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
               
               {/* Total Row */}
-              <tr className="bg-orange-50 dark:bg-orange-950/20 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
-                <td className="px-4 py-4 text-center"></td>
-                <td className="px-4 py-4">Kab. Kepl. Sangihe</td>
-                <td className="px-4 py-4 text-center">{totalTarget.toLocaleString()}</td>
-                <td className="px-4 py-4 text-center">{totalSls.toLocaleString()}</td>
-                
-                <td className="px-2 py-4 text-center">{totalOpen.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalOpen / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center">{totalDraft.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalDraft / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center">{totalSubmitted.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalSubmitted / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center">{totalRejected.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalRejected / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center">{totalApproved.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalApproved / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center">{totalRevoke.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalRevoke / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center text-orange-600 dark:text-orange-400">{totalRealisasi.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center">{renderRealisasiCell(totalTarget > 0 ? totalRealisasi / totalTarget : 0)}</td>
-                
-                <td className="px-2 py-4 text-center text-emerald-600 dark:text-emerald-400">{totalProgresHarian.toLocaleString()}</td>
-                <td className="px-2 py-4 text-center text-emerald-600 dark:text-emerald-400">{formatPct(totalTarget > 0 ? totalProgresHarian / totalTarget : 0)}</td>
-              </tr>
+              {(() => {
+                const totalProgresHarianPct = totalTarget > 0 ? totalProgresHarian / totalTarget : 0;
+                const totalPhColor = getProgresHarianColorClass(totalProgresHarianPct);
+                return (
+                  <tr className="bg-orange-50 dark:bg-orange-950/20 font-bold border-t-2 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                    <td className="px-4 py-4 text-center"></td>
+                    <td className={`px-4 py-4 ${totalPhColor.text}`}>Kab. Kepl. Sangihe</td>
+                    <td className="px-4 py-4 text-center">{totalTarget.toLocaleString()}</td>
+                    <td className="px-4 py-4 text-center">{totalSls.toLocaleString()}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalOpen.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalOpen / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalDraft.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalDraft / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalSubmitted.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalSubmitted / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalRejected.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalRejected / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalApproved.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalApproved / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center">{totalRevoke.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{formatPct(totalTarget > 0 ? totalRevoke / totalTarget : 0)}</td>
+                    
+                    <td className="px-2 py-4 text-center text-orange-600 dark:text-orange-400">{totalRealisasi.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">{renderRealisasiCell(totalTarget > 0 ? totalRealisasi / totalTarget : 0)}</td>
+                    
+                    <td className={`px-2 py-4 text-center ${totalPhColor.text}`}>{totalProgresHarian.toLocaleString()}</td>
+                    <td className="px-2 py-4 text-center">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs whitespace-nowrap ${totalPhColor.badge}`}>
+                        {formatPct(totalProgresHarianPct)}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })()}
             </tbody>
           </table>
         </div>
