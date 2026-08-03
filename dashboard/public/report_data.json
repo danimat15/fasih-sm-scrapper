@@ -1,7 +1,7 @@
 {
-  "report_type": "pagi",
+  "report_type": "sore",
   "date": "3 Agustus 2026",
-  "time": "12.40 WITA",
+  "time": "13.53 WITA",
   "kecamatan": [
     {
       "kecamatan": "Manganitu Selatan",
@@ -14,7 +14,7 @@
       "approved": 3799,
       "revoke": 3,
       "realisasi": 3986,
-      "progres_harian": 101,
+      "progres_harian": 0,
       "open_pct": 0.07358708189158016,
       "draft_pct": 0.006920415224913495,
       "submitted_pct": 0.041753171856978084,
@@ -22,7 +22,7 @@
       "approved_pct": 0.8763552479815455,
       "revoke_pct": 0.0006920415224913495,
       "realisasi_pct": 0.9194925028835064,
-      "progres_harian_pct": 0.023298731257208764
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tatoareng",
@@ -35,7 +35,7 @@
       "approved": 1202,
       "revoke": 3,
       "realisasi": 1227,
-      "progres_harian": 20,
+      "progres_harian": 0,
       "open_pct": 0.07328447701532312,
       "draft_pct": 0.10926049300466356,
       "submitted_pct": 0.013990672884743505,
@@ -43,7 +43,7 @@
       "approved_pct": 0.8007994670219853,
       "revoke_pct": 0.001998667554963358,
       "realisasi_pct": 0.8174550299800133,
-      "progres_harian_pct": 0.013324450366422385
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tamako",
@@ -56,7 +56,7 @@
       "approved": 5321,
       "revoke": 1,
       "realisasi": 5873,
-      "progres_harian": 75,
+      "progres_harian": 0,
       "open_pct": 0.09601092067344152,
       "draft_pct": 0.013195813741847414,
       "submitted_pct": 0.06537236462915214,
@@ -64,7 +64,7 @@
       "approved_pct": 0.8070681025329896,
       "revoke_pct": 0.00015167602002123465,
       "realisasi_pct": 0.8907932655847111,
-      "progres_harian_pct": 0.011375701501592598
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tabukan Selatan",
@@ -77,7 +77,7 @@
       "approved": 3147,
       "revoke": 4,
       "realisasi": 3252,
-      "progres_harian": 65,
+      "progres_harian": 0,
       "open_pct": 0.049678550555230856,
       "draft_pct": 0.0,
       "submitted_pct": 0.01636469900642899,
@@ -85,7 +85,7 @@
       "approved_pct": 0.9196376388077148,
       "revoke_pct": 0.0011689070718877848,
       "realisasi_pct": 0.9503214494447692,
-      "progres_harian_pct": 0.018994739918176504
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tabukan Selatan Tengah",
@@ -98,7 +98,7 @@
       "approved": 913,
       "revoke": 1,
       "realisasi": 930,
-      "progres_harian": 9,
+      "progres_harian": 0,
       "open_pct": 0.19011082693947143,
       "draft_pct": 0.017050298380221655,
       "submitted_pct": 0.005967604433077579,
@@ -106,7 +106,7 @@
       "approved_pct": 0.7783461210571185,
       "revoke_pct": 0.0008525149190110827,
       "realisasi_pct": 0.7928388746803069,
-      "progres_harian_pct": 0.0076726342710997444
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tabukan Selatan Tenggara",
@@ -119,7 +119,7 @@
       "approved": 871,
       "revoke": 0,
       "realisasi": 892,
-      "progres_harian": 23,
+      "progres_harian": 0,
       "open_pct": 0.18056828597616864,
       "draft_pct": 0.0018331805682859762,
       "submitted_pct": 0.01833180568285976,
@@ -127,7 +127,7 @@
       "approved_pct": 0.7983501374885427,
       "revoke_pct": 0.0,
       "realisasi_pct": 0.8175985334555453,
-      "progres_harian_pct": 0.021081576535288724
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tabukan Tengah",
@@ -140,7 +140,7 @@
       "approved": 3392,
       "revoke": 8,
       "realisasi": 3658,
-      "progres_harian": 109,
+      "progres_harian": 0,
       "open_pct": 0.25888732677244425,
       "draft_pct": 0.006426993372163085,
       "submitted_pct": 0.03856196023297851,
@@ -148,7 +148,7 @@
       "approved_pct": 0.681261297449287,
       "revoke_pct": 0.0016067483430407712,
       "realisasi_pct": 0.7346856798553927,
-      "progres_harian_pct": 0.021891946173930508
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Manganitu",
@@ -161,7 +161,7 @@
       "approved": 4513,
       "revoke": 0,
       "realisasi": 5044,
-      "progres_harian": 97,
+      "progres_harian": 0,
       "open_pct": 0.22264845787939236,
       "draft_pct": 0.0033757864047874787,
       "submitted_pct": 0.039435323001381,
@@ -169,7 +169,7 @@
       "approved_pct": 0.692496547491177,
       "revoke_pct": 0.0,
       "realisasi_pct": 0.7739757557158201,
-      "progres_harian_pct": 0.014884149148381157
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tahuna",
@@ -182,7 +182,7 @@
       "approved": 6364,
       "revoke": 6,
       "realisasi": 6621,
-      "progres_harian": 147,
+      "progres_harian": 0,
       "open_pct": 0.2309981684981685,
       "draft_pct": 0.011103479853479854,
       "submitted_pct": 0.02712912087912088,
@@ -190,7 +190,7 @@
       "approved_pct": 0.7284798534798534,
       "revoke_pct": 0.0006868131868131869,
       "realisasi_pct": 0.7578983516483516,
-      "progres_harian_pct": 0.016826923076923076
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tahuna Timur",
@@ -203,7 +203,7 @@
       "approved": 4210,
       "revoke": 7,
       "realisasi": 4401,
-      "progres_harian": 73,
+      "progres_harian": 0,
       "open_pct": 0.1718238077903167,
       "draft_pct": 0.02712049508554787,
       "submitted_pct": 0.024026210411357846,
@@ -211,7 +211,7 @@
       "approved_pct": 0.7662904987258827,
       "revoke_pct": 0.0012741172187841281,
       "realisasi_pct": 0.8010556971241354,
-      "progres_harian_pct": 0.013287222424463051
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tahuna Barat",
@@ -224,7 +224,7 @@
       "approved": 1719,
       "revoke": 7,
       "realisasi": 1865,
-      "progres_harian": 51,
+      "progres_harian": 0,
       "open_pct": 0.21942299878098334,
       "draft_pct": 0.022754977651361235,
       "submitted_pct": 0.022754977651361235,
@@ -232,7 +232,7 @@
       "approved_pct": 0.6984965461194637,
       "revoke_pct": 0.0028443722064201544,
       "realisasi_pct": 0.7578220235676554,
-      "progres_harian_pct": 0.02072328321820398
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Tabukan Utara",
@@ -245,7 +245,7 @@
       "approved": 8921,
       "revoke": 15,
       "realisasi": 9110,
-      "progres_harian": 166,
+      "progres_harian": 0,
       "open_pct": 0.08293317326930773,
       "draft_pct": 0.005702280912364946,
       "submitted_pct": 0.015906362545018007,
@@ -253,7 +253,7 @@
       "approved_pct": 0.8924569827931172,
       "revoke_pct": 0.0015006002400960385,
       "realisasi_pct": 0.9113645458183274,
-      "progres_harian_pct": 0.016606642657062826
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Nusa Tabukan",
@@ -266,7 +266,7 @@
       "approved": 1168,
       "revoke": 0,
       "realisasi": 1170,
-      "progres_harian": 10,
+      "progres_harian": 0,
       "open_pct": 0.029850746268656716,
       "draft_pct": 0.0,
       "submitted_pct": 0.0,
@@ -274,7 +274,7 @@
       "approved_pct": 0.9684908789386402,
       "revoke_pct": 0.0,
       "realisasi_pct": 0.9701492537313433,
-      "progres_harian_pct": 0.008291873963515755
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Kepulauan Marore",
@@ -287,7 +287,7 @@
       "approved": 417,
       "revoke": 0,
       "realisasi": 419,
-      "progres_harian": 8,
+      "progres_harian": 0,
       "open_pct": 0.3222748815165877,
       "draft_pct": 0.01579778830963665,
       "submitted_pct": 0.0,
@@ -295,7 +295,7 @@
       "approved_pct": 0.6587677725118484,
       "revoke_pct": 0.0,
       "realisasi_pct": 0.6619273301737757,
-      "progres_harian_pct": 0.01263823064770932
+      "progres_harian_pct": 0.0
     },
     {
       "kecamatan": "Kendahe",
@@ -308,7 +308,7 @@
       "approved": 2273,
       "revoke": 11,
       "realisasi": 2328,
-      "progres_harian": 53,
+      "progres_harian": 0,
       "open_pct": 0.21404456448345713,
       "draft_pct": 0.0,
       "submitted_pct": 0.009790681971640782,
@@ -316,7 +316,7 @@
       "approved_pct": 0.7673869007427414,
       "revoke_pct": 0.003713706954760297,
       "realisasi_pct": 0.7859554355165429,
-      "progres_harian_pct": 0.01789331532748143
+      "progres_harian_pct": 0.0
     }
   ],
   "ppl": [
@@ -2500,13 +2500,13 @@
       "kecamatan": "Tabukan Selatan Tenggara",
       "realisasi_pct": 81.75985334555453,
       "rank": 6,
-      "rank_change": 1
+      "rank_change": 0
     },
     {
       "kecamatan": "Tatoareng",
       "realisasi_pct": 81.74550299800133,
       "rank": 7,
-      "rank_change": -1
+      "rank_change": 0
     },
     {
       "kecamatan": "Tahuna Timur",
