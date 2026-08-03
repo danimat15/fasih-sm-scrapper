@@ -219,6 +219,7 @@ export default function PetugasPage() {
   const [activeTab, setActiveTab] = useState<"pcl" | "pml" | "kecamatan" | "prioritas">("pcl");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKec, setSelectedKec] = useState("all");
+  const [selectedPriorityFilter, setSelectedPriorityFilter] = useState<"all" | "prioritas" | "non_prioritas">("all");
   const [sortBy, setSortBy] = useState<"nama" | "realisasi_desc" | "realisasi_asc" | "pct_desc" | "pct_asc" | "progress_day_desc">("nama");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
@@ -740,7 +741,7 @@ export default function PetugasPage() {
     });
   };
 
-  // Helper to aggregate stats for SLS Prioritas
+  // Helper to aggregate stats for Progres SLS (Priority & Non-Priority)
   const aggregatePrioritySLSStats = (data: DashboardRecord[]) => {
     const map: { [slsCode: string]: {
       slsCode: string;
@@ -748,6 +749,7 @@ export default function PetugasPage() {
       koseka: string;
       pencacah: string;
       pengawas: string;
+      isPrioritas: boolean;
       open: number;
       draft: number;
       submit: number;
@@ -773,7 +775,6 @@ export default function PetugasPage() {
     } } = {};
 
     data.forEach(record => {
-      if (record.isPrioritas !== "Ya") return;
       const code = record.slsCode;
       
       if (!map[code]) {
@@ -783,6 +784,7 @@ export default function PetugasPage() {
           koseka: record.koseka || "-",
           pencacah: "-",
           pengawas: "-",
+          isPrioritas: record.isPrioritas === "Ya",
           open: 0,
           draft: 0,
           submit: 0,
@@ -809,6 +811,9 @@ export default function PetugasPage() {
       }
 
       const entry = map[code];
+      if (record.isPrioritas === "Ya") {
+        entry.isPrioritas = true;
+      }
 
       // Collect officer names based on category
       const isPencacah = record.category.toLowerCase() === "pencacah";
@@ -922,7 +927,7 @@ export default function PetugasPage() {
     return Array.from(new Set(list)).sort();
   }, [rawData]);
 
-  // Filtered priority SLS list
+  // Filtered priority & non-priority SLS list
   const filteredPrioritySLS = useMemo(() => {
     if (activeTab !== "prioritas") return [];
 
@@ -932,15 +937,25 @@ export default function PetugasPage() {
         return false;
       }
 
+      // Priority status filter
+      if (selectedPriorityFilter === "prioritas" && !item.isPrioritas) {
+        return false;
+      }
+      if (selectedPriorityFilter === "non_prioritas" && item.isPrioritas) {
+        return false;
+      }
+
       // Search query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
+        const priorityLabel = item.isPrioritas ? "prioritas" : "biasa non-prioritas";
         return (
           item.slsCode.toLowerCase().includes(query) ||
           item.namaKec.toLowerCase().includes(query) ||
           item.koseka.toLowerCase().includes(query) ||
           item.pencacah.toLowerCase().includes(query) ||
-          item.pengawas.toLowerCase().includes(query)
+          item.pengawas.toLowerCase().includes(query) ||
+          priorityLabel.includes(query)
         );
       }
 
@@ -977,7 +992,7 @@ export default function PetugasPage() {
     }
 
     return base;
-  }, [prioritySLSStats, activeTab, selectedKec, searchQuery, sortBy, baselinePrioritySLSMap]);
+  }, [prioritySLSStats, activeTab, selectedKec, selectedPriorityFilter, searchQuery, sortBy, baselinePrioritySLSMap]);
 
   // Filtered officers list
   const filteredOfficers = useMemo(() => {
@@ -1153,7 +1168,7 @@ export default function PetugasPage() {
 
     if (activeTab === "prioritas") {
       const headers = [
-        "Kode SLS", "Kecamatan", "Koseka", "Pencacah (PCL)", "Pengawas (PML)", 
+        "Kode SLS", "Kecamatan", "Koseka", "Prioritas", "Pencacah (PCL)", "Pengawas (PML)", 
         "Total Target", "OPEN", "DRAFT", "SUBMITTED BY Pencacah", 
         "REJECTED BY Pengawas", "APPROVED BY Pengawas", "REVOKED BY Pengawas", "Progres", "Realisasi", "Realisasi (%)"
       ];
@@ -1165,6 +1180,7 @@ export default function PetugasPage() {
           `"${item.slsCode}"`,
           `"${formatKecName(item.namaKec).replace(/"/g, '""')}"`,
           `"${item.koseka.replace(/"/g, '""')}"`,
+          `"${item.isPrioritas ? "Ya" : "Tidak"}"`,
           `"${item.pencacah.replace(/"/g, '""')}"`,
           `"${item.pengawas.replace(/"/g, '""')}"`,
           item.total,
@@ -1439,7 +1455,7 @@ export default function PetugasPage() {
                     }`}
                   >
                     <Layers className="w-4 h-4" />
-                    SLS Prioritas
+                    Progres SLS
                   </button>
                 </div>
 
@@ -1466,13 +1482,13 @@ export default function PetugasPage() {
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
                 
                 {/* Search Bar */}
-                <div className="col-span-12 md:col-span-6 relative">
+                <div className={`col-span-12 ${activeTab === "prioritas" ? "md:col-span-3" : "md:col-span-6"} relative`}>
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
                     <Search className="w-4 h-4" />
                   </div>
                   <input
                     type="text"
-                    placeholder="Cari nama petugas, email, kecamatan, atau nama Koseka..."
+                    placeholder="Cari SLS, nama petugas, email, kecamatan..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-10 py-2.5 rounded-xl border bg-slate-100 dark:bg-slate-950 text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/80 outline-none transition-all border-slate-300 dark:border-slate-800 text-slate-950 dark:text-slate-50 placeholder:text-slate-500 dark:placeholder:text-slate-400 font-semibold"
@@ -1508,6 +1524,27 @@ export default function PetugasPage() {
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
+
+                {/* Priority Status Selector (for Progres SLS tab) */}
+                {activeTab === "prioritas" && (
+                  <div className={`${showFilters ? "col-span-12 md:col-span-3 block" : "hidden md:block md:col-span-3"} relative`}>
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Layers className="w-4 h-4 text-orange-500" />
+                    </div>
+                    <select
+                      value={selectedPriorityFilter}
+                      onChange={(e) => setSelectedPriorityFilter(e.target.value as any)}
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl border bg-slate-100 dark:bg-slate-950 text-xs focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/80 outline-none transition-all border-slate-300 dark:border-slate-800 appearance-none text-slate-950 dark:text-slate-50 cursor-pointer font-bold"
+                    >
+                      <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="all">Semua SLS (Prioritas & Biasa)</option>
+                      <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="prioritas">Hanya SLS Prioritas</option>
+                      <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" value="non_prioritas">Hanya SLS Biasa (Non-Prioritas)</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-500 dark:text-slate-400">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                )}
 
                 {/* Sort Selector */}
                 <div className={`${showFilters ? "col-span-12 md:col-span-3 block" : "hidden md:block md:col-span-3"} relative`}>
@@ -1567,7 +1604,7 @@ export default function PetugasPage() {
                     <span className="font-bold">Progres</span> dihitung dari jumlah status yang bukan OPEN dan DRAFT.
                   </li>
                   <li>
-                    <span className="font-bold">Realisasi PCL, Kecamatan & SLS Prioritas</span> = APPROVED BY Pengawas + SUBMITTED BY Pencacah + REJECTED BY Pengawas + REJECTED BY Admin Kabupaten + REVOKED BY Pengawas + SUBMITTED RESPONDENT + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
+                    <span className="font-bold">Realisasi PCL, Kecamatan & Progres SLS</span> = APPROVED BY Pengawas + SUBMITTED BY Pencacah + REJECTED BY Pengawas + REJECTED BY Admin Kabupaten + REVOKED BY Pengawas + SUBMITTED RESPONDENT + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
                   </li>
                   <li>
                     <span className="font-bold">Realisasi PML</span> = APPROVED BY Pengawas + REJECTED BY Pengawas + REVOKED BY Pengawas + REJECTED BY Admin Kabupaten + COMPLETED BY Admin Kabupaten + EDITED BY Admin Kabupaten.
@@ -1597,6 +1634,7 @@ export default function PetugasPage() {
                         <>
                           <th className="py-4 px-4 bg-slate-50 dark:bg-slate-900">Kecamatan</th>
                           <th className="py-4 px-4 bg-slate-50 dark:bg-slate-900">Koseka</th>
+                          <th className="py-4 px-4 text-center bg-slate-50 dark:bg-slate-900">Prioritas</th>
                           <th className="py-4 px-4 bg-slate-50 dark:bg-slate-900">Pencacah (PCL)</th>
                           <th className="py-4 px-4 bg-slate-50 dark:bg-slate-900">Pengawas (PML)</th>
                         </>
@@ -1905,8 +1943,8 @@ export default function PetugasPage() {
                     ) : activeTab === "prioritas" ? (
                       filteredPrioritySLS.length === 0 ? (
                         <tr>
-                          <td colSpan={20} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
-                            Tidak ada data SLS Prioritas yang cocok dengan filter atau pencarian Anda.
+                          <td colSpan={21} className="py-10 text-center text-slate-700 dark:text-slate-300 text-xs">
+                            Tidak ada data SLS yang cocok dengan filter atau pencarian Anda.
                           </td>
                         </tr>
                       ) : (
@@ -1936,7 +1974,11 @@ export default function PetugasPage() {
                           return (
                             <tr
                               key={item.slsCode}
-                              className="group border-b border-orange-500/20 dark:border-orange-500/10 bg-orange-500/5 dark:bg-orange-950/10 hover:bg-orange-500/10 dark:hover:bg-orange-950/20 transition-colors text-xs border-l-4 border-l-orange-500"
+                              className={`group border-b transition-colors text-xs ${
+                                item.isPrioritas
+                                  ? "border-orange-500/20 dark:border-orange-500/10 bg-orange-500/5 dark:bg-orange-950/10 hover:bg-orange-500/10 dark:hover:bg-orange-950/20 border-l-4 border-l-orange-500"
+                                  : "border-slate-200 dark:border-slate-800/60 hover:bg-slate-50/50 dark:hover:bg-slate-950/10 border-l-4 border-l-slate-300 dark:border-l-slate-700"
+                              }`}
                             >
                               <td className="py-3 px-2 text-center font-semibold text-slate-700 dark:text-slate-300">
                                 {index + 1}
@@ -1949,6 +1991,17 @@ export default function PetugasPage() {
                               </td>
                               <td className="py-3 px-4 font-normal text-slate-700 dark:text-slate-300">
                                 {item.koseka}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {item.isPrioritas ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 whitespace-nowrap">
+                                    Prioritas
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 whitespace-nowrap">
+                                    Biasa
+                                  </span>
+                                )}
                               </td>
                               <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">
                                 {item.pencacah}
