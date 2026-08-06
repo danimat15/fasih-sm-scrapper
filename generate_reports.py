@@ -171,6 +171,8 @@ def format_kec_name(name):
 
 def generate_report_1(public_dir):
     print("Generating Report 1 (Dashboard Leaderboards)...")
+    global START_TIME
+    START_TIME = get_initial_start_time(wita_tz)
     
     hour = START_TIME.hour
     report_type = "pagi" if hour < 13 else "sore"
