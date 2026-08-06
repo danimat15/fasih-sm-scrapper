@@ -70,6 +70,17 @@ def run_git_commands(timestamp_str):
             print("Warning: Not a Git repository or Git is not installed. Skipping push.")
             return
 
+        # Ensure we are not stuck in an incomplete rebase or merge
+        subprocess.run(["git", "rebase", "--abort"], capture_output=True)
+        subprocess.run(["git", "merge", "--abort"], capture_output=True)
+
+        # Ensure we are on main branch
+        branch_check = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True)
+        current_branch = branch_check.stdout.strip()
+        if current_branch != "main":
+            print(f"Not on main branch (currently on '{current_branch}'). Checking out main...")
+            subprocess.run(["git", "checkout", "main"], capture_output=True)
+
         # Add files to git
         files_to_add = [
             "scraped_data.csv",
@@ -115,38 +126,34 @@ def run_git_commands(timestamp_str):
         
         # Check which files exist and add them
         existing_files = [f for f in files_to_add if os.path.exists(f)]
-        if not existing_files:
-            print("No output files found to commit.")
-            return
-            
-        subprocess.run(["git", "add"] + existing_files, check=True)
-        
+        if existing_files:
+            subprocess.run(["git", "add"] + existing_files, check=False)
+
+        # Stage any leftover tracked changes before pull/rebase
+        subprocess.run(["git", "add", "-u"], check=False)
+
         # Check if there are changes staged for commit
         status_check = subprocess.run(["git", "diff", "--cached", "--quiet"])
-        if status_check.returncode == 0:
-            print("No changes detected in data files. Skipping git commit/push.")
-            return
-            
-        commit_msg = f"Update data: {timestamp_str}"
-        print(f"Committing changes with message: '{commit_msg}'...")
-        subprocess.run(["git", "commit", "-m", commit_msg], check=True)
-        
-        # Stage any leftover tracked changes before pull/rebase to avoid working tree conflicts
-        subprocess.run(["git", "add", "-A"], check=False)
-        diff_leftover = subprocess.run(["git", "diff", "--cached", "--quiet"])
-        if diff_leftover.returncode != 0:
-            subprocess.run(["git", "commit", "-m", f"Chore: stage remaining outputs ({timestamp_str})"], check=False)
+        if status_check.returncode != 0:
+            commit_msg = f"Update data: {timestamp_str}"
+            print(f"Committing changes with message: '{commit_msg}'...")
+            subprocess.run(["git", "commit", "-m", commit_msg], check=False)
 
-        print("Pulling latest remote changes (rebase with ours strategy) before pushing...")
-        pull_res = subprocess.run(["git", "pull", "--rebase", "-X", "ours", "origin", "main"], capture_output=True, text=True)
+        print("Pulling latest remote changes before pushing...")
+        pull_res = subprocess.run(["git", "pull", "--rebase", "--autostash", "-X", "ours", "origin", "main"], capture_output=True, text=True)
         if pull_res.returncode != 0:
-            print(f"Warning: git pull --rebase encountered an issue: {pull_res.stderr.strip()}")
+            print(f"Warning: git pull --rebase encountered an issue: {pull_res.stderr.strip() or pull_res.stdout.strip()}")
             subprocess.run(["git", "rebase", "--abort"], capture_output=True)
-            subprocess.run(["git", "pull", "--no-rebase", "-X", "ours", "origin", "main"], capture_output=True)
+            pull_no_rebase = subprocess.run(["git", "pull", "--no-rebase", "-X", "ours", "origin", "main"], capture_output=True, text=True)
+            if pull_no_rebase.returncode != 0:
+                print(f"Warning: git pull --no-rebase also reported issue: {pull_no_rebase.stderr.strip()}")
 
         print("Pushing to GitHub...")
-        subprocess.run(["git", "push"], check=True)
-        print("Git push completed successfully!")
+        push_res = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
+        if push_res.returncode == 0:
+            print("Git push completed successfully!")
+        else:
+            print(f"Error pushing to GitHub: {push_res.stderr.strip()}")
     except Exception as e:
         print(f"Warning: Failed to execute Git commands: {e}")
 
