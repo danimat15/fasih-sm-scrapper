@@ -140,13 +140,14 @@ def run_git_commands(timestamp_str):
             subprocess.run(["git", "commit", "-m", commit_msg], check=False)
 
         print("Pulling latest remote changes before pushing...")
-        pull_res = subprocess.run(["git", "pull", "--rebase", "--autostash", "-X", "ours", "origin", "main"], capture_output=True, text=True)
+        pull_res = subprocess.run(["git", "pull", "--rebase", "--autostash", "-X", "theirs", "origin", "main"], capture_output=True, text=True)
         if pull_res.returncode != 0:
             print(f"Warning: git pull --rebase encountered an issue: {pull_res.stderr.strip() or pull_res.stdout.strip()}")
             subprocess.run(["git", "rebase", "--abort"], capture_output=True)
             pull_no_rebase = subprocess.run(["git", "pull", "--no-rebase", "-X", "ours", "origin", "main"], capture_output=True, text=True)
             if pull_no_rebase.returncode != 0:
                 print(f"Warning: git pull --no-rebase also reported issue: {pull_no_rebase.stderr.strip()}")
+
 
         print("Pushing to GitHub...")
         push_res = subprocess.run(["git", "push", "origin", "main"], capture_output=True, text=True)
