@@ -142,6 +142,34 @@ def parse_manual_markdown(md_path="data_manual_dashboard.md"):
     with open(md_path, "r", encoding="utf-8") as f:
         lines = [line.strip() for line in f]
 
+    # Pre-process lines to keep only the latest block for each unique email address
+    blocks = []
+    current_email_block = None
+    current_block_lines = []
+
+    for line in lines:
+        if '@' in line:
+            em = line.lower()
+            if current_email_block != em:
+                if current_email_block is not None:
+                    blocks.append((current_email_block, current_block_lines))
+                current_email_block = em
+                current_block_lines = [line]
+        else:
+            if current_email_block is not None:
+                current_block_lines.append(line)
+
+    if current_email_block is not None:
+        blocks.append((current_email_block, current_block_lines))
+
+    latest_blocks = {}
+    for idx, (em, b_lines) in enumerate(blocks):
+        latest_blocks[em] = (idx, b_lines)
+
+    lines = []
+    for idx, b_lines in sorted(latest_blocks.values(), key=lambda x: x[0]):
+        lines.extend(b_lines)
+
     pml_ppl_map = load_pml_ppl_map()
     records = {}
 
