@@ -37,7 +37,11 @@ def get_initial_start_time(wita_tz):
 START_TIME = get_initial_start_time(wita_tz)
 
 def get_current_date_str():
-    return f"{START_TIME.day} Juli"
+    months = {
+        1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
+        7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+    }
+    return f"{START_TIME.day} {months.get(START_TIME.month, 'Juli')}"
 
 def get_current_timestamp_str():
     months = {
@@ -817,6 +821,8 @@ def generate_report_1(public_dir):
 
 def generate_report_2(public_dir):
     print("Generating Report 2 (Monev Excel Report)...")
+    global START_TIME
+    START_TIME = get_initial_start_time(wita_tz)
     thin_border = Border(
         left=Side(style='thin', color='CCCCCC'),
         right=Side(style='thin', color='CCCCCC'),
@@ -1502,6 +1508,8 @@ def generate_report_2(public_dir):
 def main():
     public_dir = os.path.join("dashboard", "public")
     os.makedirs(public_dir, exist_ok=True)
+    global START_TIME
+    START_TIME = get_initial_start_time(wita_tz)
     
     generate_report_1(public_dir)
     generate_report_2(public_dir)

@@ -750,17 +750,16 @@ def run_unified_scraper():
 
     if run_mode == "manual_dashboard":
         import parse_manual_dashboard
-        time_arg = None
-        for arg in sys.argv[1:]:
-            if not arg.startswith("-"):
-                time_arg = arg
-                break
+        non_flag_args = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
+        time_arg = " ".join(non_flag_args).strip() if non_flag_args else None
+        
         if not time_arg and sys.stdin.isatty():
             try:
                 inp = input("Masukkan jam/waktu pengambilan data (misal: '09.35' atau '22 Juli 2026 pukul 09.35 WITA') [Default WITA sekarang]: ")
                 time_arg = inp.strip() if inp.strip() else None
             except Exception:
                 time_arg = None
+
         
         parse_manual_dashboard.process_manual_data(timestamp_input=time_arg)
         print("\n" + "=" * 50)

@@ -54,18 +54,26 @@ def format_custom_timestamp(raw_input: str) -> str:
     if "pukul" in raw and "WITA" in raw:
         return raw
     
-    # If time pattern e.g. "09.35", "9.35", "09:35", "09.35 WITA"
+    now = datetime.now(wita_tz)
+    months = {
+        1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
+        7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
+    }
+    
+    # Match time pattern with minutes e.g. "09.35", "9.35", "09:35", "11.00 WITA"
     time_match = re.search(r'(\d{1,2})[:.](\d{2})', raw)
     if time_match:
         h, m = time_match.group(1).zfill(2), time_match.group(2)
-        now = datetime.now(wita_tz)
-        months = {
-            1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
-            7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
-        }
         return f"{now.day} {months[now.month]} {now.year} pukul {h}.{m} WITA"
         
+    # Match single hour e.g. "11", "9", "11 WITA"
+    hour_match = re.search(r'^\s*(\d{1,2})\s*(?:WITA)?\s*$', raw, re.IGNORECASE)
+    if hour_match:
+        h = hour_match.group(1).zfill(2)
+        return f"{now.day} {months[now.month]} {now.year} pukul {h}.00 WITA"
+        
     return raw
+
 
 def load_priority_sls():
     priority_file = os.path.join("data", "kdsls_prioritas.txt")
