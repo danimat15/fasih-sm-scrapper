@@ -11249,3 +11249,1088 @@ chikaaalombontari@gmail.com
 Total Assignment
 0
 No data found.
+alfred86354@gmail.com
+alfred86354@gmail.com
+Total Assignment
+401
+7103061001000200
+APPROVED BY Pengawas
+92
+COMPLETED BY Admin Kabupaten
+8
+EDITED BY Admin Kabupaten
+1
+7103061006000100
+APPROVED BY Pengawas
+64
+DRAFT
+4
+COMPLETED BY Admin Kabupaten
+2
+SUBMITTED BY Pencacah
+1
+7103061002000200
+APPROVED BY Pengawas
+47
+COMPLETED BY Admin Kabupaten
+4
+SUBMITTED BY Pencacah
+1
+7103061006000200
+APPROVED BY Pengawas
+44
+DRAFT
+2
+SUBMITTED BY Pencacah
+2
+REJECTED BY Pengawas
+1
+7103061001000100
+APPROVED BY Pengawas
+34
+COMPLETED BY Admin Kabupaten
+5
+7103061002000100
+APPROVED BY Pengawas
+25
+COMPLETED BY Admin Kabupaten
+8
+7103061009000100
+APPROVED BY Pengawas
+19
+COMPLETED BY Admin Kabupaten
+4
+EDITED BY Admin Kabupaten
+1
+OPEN
+1
+7103061001000300
+APPROVED BY Pengawas
+16
+COMPLETED BY Admin Kabupaten
+5
+7103061002000300
+APPROVED BY Pengawas
+8
+DRAFT
+1
+7103061001200100
+COMPLETED BY Admin Kabupaten
+1
+tangkabiringanayen70@gmail.com
+tangkabiringanayen70@gmail.com
+Total Assignment
+562
+7103090007001101
+APPROVED BY Pengawas
+265
+OPEN
+53
+SUBMITTED BY Pencacah
+21
+COMPLETED BY Admin Kabupaten
+11
+7103090014000600
+APPROVED BY Pengawas
+95
+COMPLETED BY Admin Kabupaten
+14
+EDITED BY Admin Kabupaten
+1
+OPEN
+1
+7103090014000500
+APPROVED BY Pengawas
+82
+COMPLETED BY Admin Kabupaten
+19
+amelssasauw138@gmail.com
+amelssasauw138@gmail.com
+Total Assignment
+440
+7103080011000300
+APPROVED BY Pengawas
+80
+OPEN
+16
+COMPLETED BY Admin Kabupaten
+3
+DRAFT
+2
+REJECTED BY Pengawas
+2
+7103080011000100
+APPROVED BY Pengawas
+60
+COMPLETED BY Admin Kabupaten
+31
+OPEN
+3
+7103080011000400
+APPROVED BY Pengawas
+80
+COMPLETED BY Admin Kabupaten
+6
+7103080013000300
+SUBMITTED BY Pencacah
+52
+OPEN
+24
+DRAFT
+2
+REJECTED BY Admin Kabupaten
+1
+7103080011000200
+APPROVED BY Pengawas
+52
+REJECTED BY Pengawas
+13
+OPEN
+10
+COMPLETED BY Admin Kabupaten
+2
+DRAFT
+1
+andinimakaminan98@gmail.com
+andinimakaminan98@gmail.com
+Total Assignment
+489
+7103100014000100
+APPROVED BY Pengawas
+176
+COMPLETED BY Admin Kabupaten
+4
+7103100002000300
+APPROVED BY Pengawas
+117
+COMPLETED BY Admin Kabupaten
+15
+EDITED BY Admin Kabupaten
+2
+7103100009000100
+APPROVED BY Pengawas
+102
+COMPLETED BY Admin Kabupaten
+1
+DRAFT
+1
+SUBMITTED BY Pencacah
+1
+7103100004000200
+APPROVED BY Pengawas
+42
+COMPLETED BY Admin Kabupaten
+28
+asyermaralending@gmail.com
+asyermaralending@gmail.com
+Total Assignment
+491
+7103091008000900
+APPROVED BY Pengawas
+131
+COMPLETED BY Admin Kabupaten
+9
+7103091008000800
+APPROVED BY Pengawas
+96
+COMPLETED BY Admin Kabupaten
+5
+OPEN
+2
+REJECTED BY Pengawas
+1
+7103091008000600
+APPROVED BY Pengawas
+63
+OPEN
+10
+SUBMITTED BY Pencacah
+6
+7103091008000700
+OPEN
+60
+7103091007000500
+APPROVED BY Pengawas
+48
+COMPLETED BY Admin Kabupaten
+7
+7103091005001100
+APPROVED BY Pengawas
+46
+COMPLETED BY Admin Kabupaten
+5
+EDITED BY Admin Kabupaten
+1
+OPEN
+1
+ayuareros714@gmail.com
+ayuareros714@gmail.com
+Total Assignment
+328
+7103040016000200
+APPROVED BY Pengawas
+59
+COMPLETED BY Admin Kabupaten
+49
+7103040016000100
+APPROVED BY Pengawas
+63
+COMPLETED BY Admin Kabupaten
+10
+EDITED BY Admin Kabupaten
+1
+7103040013000100
+APPROVED BY Pengawas
+55
+7103040011000700
+APPROVED BY Pengawas
+32
+COMPLETED BY Admin Kabupaten
+1
+EDITED BY Admin Kabupaten
+1
+7103040013000200
+APPROVED BY Pengawas
+29
+7103040011000100
+APPROVED BY Pengawas
+28
+dayan.abdullah86@gmail.com
+dayan.abdullah86@gmail.com
+Total Assignment
+532
+7103100003000300
+APPROVED BY Pengawas
+156
+COMPLETED BY Admin Kabupaten
+2
+7103100003000200
+APPROVED BY Pengawas
+75
+COMPLETED BY Admin Kabupaten
+31
+7103100002000100
+APPROVED BY Pengawas
+70
+COMPLETED BY Admin Kabupaten
+22
+REVOKED BY Admin Kabupaten
+2
+7103100003000400
+APPROVED BY Pengawas
+88
+COMPLETED BY Admin Kabupaten
+1
+7103100008000100
+APPROVED BY Pengawas
+43
+OPEN
+24
+DRAFT
+15
+SUBMITTED BY Pencacah
+3
+ellan87ansar@gmail.com
+ellan87ansar@gmail.com
+Total Assignment
+406
+7103062001000600
+APPROVED BY Pengawas
+87
+OPEN
+6
+COMPLETED BY Admin Kabupaten
+4
+7103062001000300
+APPROVED BY Pengawas
+65
+OPEN
+7
+COMPLETED BY Admin Kabupaten
+5
+7103062001000100
+APPROVED BY Pengawas
+54
+COMPLETED BY Admin Kabupaten
+7
+OPEN
+1
+7103062002000300
+APPROVED BY Pengawas
+46
+COMPLETED BY Admin Kabupaten
+3
+OPEN
+2
+7103062006000300
+APPROVED BY Pengawas
+38
+COMPLETED BY Admin Kabupaten
+4
+EDITED BY Admin Kabupaten
+1
+7103062006000100
+APPROVED BY Pengawas
+27
+COMPLETED BY Admin Kabupaten
+4
+7103062006000200
+APPROVED BY Pengawas
+17
+COMPLETED BY Admin Kabupaten
+6
+OPEN
+1
+7103061008000200
+OPEN
+13
+7103062001000500
+APPROVED BY Pengawas
+6
+COMPLETED BY Admin Kabupaten
+1
+OPEN
+1
+wenaserin@gmail.com
+wenaserin@gmail.com
+Total Assignment
+489
+7103090014001000
+APPROVED BY Pengawas
+138
+SUBMITTED BY Pencacah
+41
+OPEN
+34
+DRAFT
+6
+COMPLETED BY Admin Kabupaten
+5
+REJECTED BY Pengawas
+3
+7103090008000100
+APPROVED BY Pengawas
+91
+COMPLETED BY Admin Kabupaten
+9
+OPEN
+5
+REJECTED BY Pengawas
+3
+7103090008000900
+APPROVED BY Pengawas
+87
+7103090007000100
+APPROVED BY Pengawas
+64
+COMPLETED BY Admin Kabupaten
+2
+DRAFT
+1
+fifimendalurang@gmail.com
+fifimendalurang@gmail.com
+Total Assignment
+661
+7103100028000200
+SUBMITTED BY Pencacah
+82
+OPEN
+52
+DRAFT
+38
+APPROVED BY Pengawas
+31
+REJECTED BY Pengawas
+1
+7103100026000200
+APPROVED BY Pengawas
+132
+COMPLETED BY Admin Kabupaten
+32
+REVOKED BY Pengawas
+1
+7103100012000300
+APPROVED BY Pengawas
+143
+DRAFT
+4
+COMPLETED BY Admin Kabupaten
+1
+OPEN
+1
+7103100009000500
+APPROVED BY Pengawas
+136
+COMPLETED BY Admin Kabupaten
+6
+EDITED BY Admin Kabupaten
+1
+ghenovhepaparaso@gmail.com
+ghenovhepaparaso@gmail.com
+Total Assignment
+473
+7103090007000800
+APPROVED BY Pengawas
+243
+OPEN
+33
+COMPLETED BY Admin Kabupaten
+14
+REJECTED BY Pengawas
+1
+7103090011000100
+APPROVED BY Pengawas
+78
+COMPLETED BY Admin Kabupaten
+12
+OPEN
+7
+EDITED BY Admin Kabupaten
+1
+7103090008000500
+APPROVED BY Pengawas
+83
+COMPLETED BY Admin Kabupaten
+1
+greispangandaheng@gmail.com
+greispangandaheng@gmail.com
+Total Assignment
+562
+7103050012000200
+APPROVED BY Pengawas
+206
+OPEN
+5
+DRAFT
+1
+7103050012000500
+APPROVED BY Pengawas
+92
+COMPLETED BY Admin Kabupaten
+42
+DRAFT
+2
+REJECTED BY Pengawas
+1
+7103050012000400
+APPROVED BY Pengawas
+109
+COMPLETED BY Admin Kabupaten
+10
+7103050012000300
+APPROVED BY Pengawas
+94
+dolongsedajeisyprechilya@gmail.com
+dolongsedajeisyprechilya@gmail.com
+Total Assignment
+452
+7103070010000200
+OPEN
+35
+APPROVED BY Pengawas
+34
+SUBMITTED BY Pencacah
+26
+SUBMITTED RESPONDENT
+1
+7103070010000100
+APPROVED BY Pengawas
+52
+COMPLETED BY Admin Kabupaten
+16
+SUBMITTED BY Pencacah
+8
+OPEN
+6
+7103070014000200
+APPROVED BY Pengawas
+47
+COMPLETED BY Admin Kabupaten
+21
+7103070010000300
+APPROVED BY Pengawas
+38
+OPEN
+20
+COMPLETED BY Admin Kabupaten
+2
+REVOKED BY Pengawas
+1
+7103070017000200
+APPROVED BY Pengawas
+32
+COMPLETED BY Admin Kabupaten
+25
+EDITED BY Admin Kabupaten
+1
+REJECTED BY Pengawas
+1
+REVOKED BY Pengawas
+1
+7103070017000100
+APPROVED BY Pengawas
+31
+COMPLETED BY Admin Kabupaten
+19
+EDITED BY Admin Kabupaten
+2
+7103070010000400
+APPROVED BY Pengawas
+30
+COMPLETED BY Admin Kabupaten
+2
+OPEN
+1
+jeklinandris98@gmail.com
+jeklinandris98@gmail.com
+Total Assignment
+494
+7103040011000200
+APPROVED BY Pengawas
+153
+COMPLETED BY Admin Kabupaten
+83
+SUBMITTED BY Pencacah
+4
+EDITED BY Admin Kabupaten
+1
+7103040011000800
+APPROVED BY Pengawas
+97
+COMPLETED BY Admin Kabupaten
+1
+DRAFT
+1
+7103040011000300
+SUBMITTED BY Pencacah
+21
+APPROVED BY Pengawas
+19
+COMPLETED BY Admin Kabupaten
+2
+7103040011000400
+APPROVED BY Pengawas
+26
+SUBMITTED BY Pencacah
+8
+COMPLETED BY Admin Kabupaten
+5
+7103040015000200
+APPROVED BY Pengawas
+33
+SUBMITTED BY Pencacah
+3
+DRAFT
+1
+7103040008000200
+COMPLETED BY Admin Kabupaten
+25
+APPROVED BY Pengawas
+9
+EDITED BY Admin Kabupaten
+2
+kesyapangeke@gmail.com
+kesyapangeke@gmail.com
+Total Assignment
+505
+7103040008000100
+APPROVED BY Pengawas
+147
+COMPLETED BY Admin Kabupaten
+34
+EDITED BY Admin Kabupaten
+3
+7103040009000100
+APPROVED BY Pengawas
+149
+7103040009000300
+APPROVED BY Pengawas
+90
+COMPLETED BY Admin Kabupaten
+3
+7103040009000200
+APPROVED BY Pengawas
+68
+COMPLETED BY Admin Kabupaten
+11
+tumpiask@gmail.com
+tumpiask@gmail.com
+Total Assignment
+372
+7103040017000100
+APPROVED BY Pengawas
+178
+COMPLETED BY Admin Kabupaten
+10
+7103040017000200
+COMPLETED BY Admin Kabupaten
+54
+APPROVED BY Pengawas
+50
+EDITED BY Admin Kabupaten
+2
+REVOKED BY Pengawas
+2
+SUBMITTED RESPONDENT
+1
+7103040017000400
+APPROVED BY Pengawas
+60
+COMPLETED BY Admin Kabupaten
+15
+lindaamal24@gmail.com
+lindaamal24@gmail.com
+Total Assignment
+417
+7103070002000400
+APPROVED BY Pengawas
+93
+REJECTED BY Pengawas
+32
+COMPLETED BY Admin Kabupaten
+3
+EDITED BY Admin Kabupaten
+1
+7103070003000200
+APPROVED BY Pengawas
+87
+SUBMITTED BY Pencacah
+21
+OPEN
+13
+REJECTED BY Pengawas
+5
+DRAFT
+2
+7103070003000100
+APPROVED BY Pengawas
+89
+REJECTED BY Pengawas
+8
+COMPLETED BY Admin Kabupaten
+6
+OPEN
+1
+SUBMITTED BY Pencacah
+1
+7103070003000300
+OPEN
+20
+REJECTED BY Pengawas
+10
+APPROVED BY Pengawas
+1
+DRAFT
+1
+7103070003000400
+OPEN
+18
+REJECTED BY Pengawas
+3
+APPROVED BY Pengawas
+1
+DRAFT
+1
+tangkabiringananti@gmail.com
+tangkabiringananti@gmail.com
+Total Assignment
+566
+7103110004000300
+APPROVED BY Pengawas
+93
+OPEN
+53
+REVOKED BY Pengawas
+2
+COMPLETED BY Admin Kabupaten
+1
+7103110005000400
+APPROVED BY Pengawas
+121
+COMPLETED BY Admin Kabupaten
+5
+7103110006000500
+APPROVED BY Pengawas
+69
+COMPLETED BY Admin Kabupaten
+54
+REVOKED BY Pengawas
+1
+7103110005000300
+APPROVED BY Pengawas
+77
+COMPLETED BY Admin Kabupaten
+39
+REVOKED BY Pengawas
+2
+7103110003000100
+APPROVED BY Pengawas
+35
+OPEN
+7
+REVOKED BY Pengawas
+2
+REJECTED BY Pengawas
+1
+7103110006100100
+APPROVED BY Pengawas
+2
+7103110004100100
+APPROVED BY Pengawas
+1
+7103110005100100
+APPROVED BY Pengawas
+1
+tikamustika1704@gmail.com
+tikamustika1704@gmail.com
+Total Assignment
+545
+7103091003001000
+APPROVED BY Pengawas
+136
+COMPLETED BY Admin Kabupaten
+5
+OPEN
+2
+REJECTED BY Admin Kabupaten
+1
+SUBMITTED BY Pencacah
+1
+7103091003000700
+APPROVED BY Pengawas
+105
+COMPLETED BY Admin Kabupaten
+26
+DRAFT
+1
+EDITED BY Admin Kabupaten
+1
+REJECTED BY Admin Kabupaten
+1
+7103091003000900
+APPROVED BY Pengawas
+122
+COMPLETED BY Admin Kabupaten
+7
+OPEN
+1
+REJECTED BY Admin Kabupaten
+1
+SUBMITTED BY Pencacah
+1
+7103091002000100
+APPROVED BY Pengawas
+62
+COMPLETED BY Admin Kabupaten
+10
+REJECTED BY Admin Kabupaten
+1
+7103091007000800
+OPEN
+59
+SUBMITTED BY Pencacah
+2
+ritmawatisiliwire03@gmail.com
+ritmawatisiliwire03@gmail.com
+Total Assignment
+545
+7103091003000400
+APPROVED BY Pengawas
+119
+DRAFT
+6
+OPEN
+5
+REJECTED BY Pengawas
+3
+7103091004000400
+APPROVED BY Pengawas
+87
+COMPLETED BY Admin Kabupaten
+26
+OPEN
+1
+REVOKED BY Pengawas
+1
+7103091005000700
+APPROVED BY Pengawas
+83
+DRAFT
+2
+7103091005000400
+APPROVED BY Pengawas
+63
+COMPLETED BY Admin Kabupaten
+17
+7103091005000600
+APPROVED BY Pengawas
+49
+COMPLETED BY Admin Kabupaten
+2
+DRAFT
+2
+OPEN
+1
+REJECTED BY Pengawas
+1
+7103091006000200
+APPROVED BY Pengawas
+24
+COMPLETED BY Admin Kabupaten
+20
+7103091006000300
+APPROVED BY Pengawas
+33
+ruslanginoga82@gmail.com
+ruslanginoga82@gmail.com
+Total Assignment
+387
+7103101001000400
+APPROVED BY Pengawas
+69
+COMPLETED BY Admin Kabupaten
+12
+7103101001000100
+APPROVED BY Pengawas
+59
+COMPLETED BY Admin Kabupaten
+7
+7103101002000200
+APPROVED BY Pengawas
+53
+7103101002000300
+APPROVED BY Pengawas
+52
+7103101001000200
+COMPLETED BY Admin Kabupaten
+30
+APPROVED BY Pengawas
+20
+7103101001000300
+APPROVED BY Pengawas
+27
+COMPLETED BY Admin Kabupaten
+21
+7103101001000600
+APPROVED BY Pengawas
+37
+tianfirnanda16@gmail.com
+tianfirnanda16@gmail.com
+Total Assignment
+516
+7103091003000800
+APPROVED BY Pengawas
+91
+7103091003001100
+APPROVED BY Pengawas
+71
+COMPLETED BY Admin Kabupaten
+14
+EDITED BY Admin Kabupaten
+2
+REJECTED BY Pengawas
+1
+7103091003000300
+APPROVED BY Pengawas
+68
+COMPLETED BY Admin Kabupaten
+12
+7103091003000600
+APPROVED BY Pengawas
+71
+COMPLETED BY Admin Kabupaten
+3
+REJECTED BY Pengawas
+2
+7103091005000900
+APPROVED BY Pengawas
+67
+COMPLETED BY Admin Kabupaten
+1
+7103091008000300
+APPROVED BY Pengawas
+61
+COMPLETED BY Admin Kabupaten
+5
+7103091005000200
+OPEN
+31
+APPROVED BY Pengawas
+8
+DRAFT
+6
+REJECTED BY Pengawas
+2
+sriayutamamile@gmail.com
+sriayutamamile@gmail.com
+Total Assignment
+424
+7103060020000100
+APPROVED BY Pengawas
+118
+COMPLETED BY Admin Kabupaten
+35
+7103060020000300
+APPROVED BY Pengawas
+116
+COMPLETED BY Admin Kabupaten
+5
+7103060020000200
+APPROVED BY Pengawas
+100
+REVOKED BY Pengawas
+1
+7103060012000300
+APPROVED BY Pengawas
+44
+COMPLETED BY Admin Kabupaten
+5
+spidaniakundimang@gmail.com
+spidaniakundimang@gmail.com
+Total Assignment
+465
+7103070013000100
+APPROVED BY Pengawas
+113
+OPEN
+8
+SUBMITTED BY Pencacah
+6
+COMPLETED BY Admin Kabupaten
+3
+REVOKED BY Pengawas
+2
+7103070006000400
+APPROVED BY Pengawas
+99
+COMPLETED BY Admin Kabupaten
+6
+REJECTED BY Pengawas
+6
+7103070013000200
+OPEN
+67
+APPROVED BY Pengawas
+25
+SUBMITTED BY Pencacah
+3
+7103070009000200
+APPROVED BY Pengawas
+65
+COMPLETED BY Admin Kabupaten
+11
+REJECTED BY Pengawas
+2
+7103070013000300
+APPROVED BY Pengawas
+46
+OPEN
+3
+dienvoni@gmail.com
+dienvoni@gmail.com
+Total Assignment
+534
+7103110002000100
+APPROVED BY Pengawas
+95
+COMPLETED BY Admin Kabupaten
+37
+OPEN
+5
+7103110005000100
+APPROVED BY Pengawas
+86
+COMPLETED BY Admin Kabupaten
+26
+7103110001000400
+APPROVED BY Pengawas
+68
+OPEN
+32
+SUBMITTED BY Pencacah
+2
+COMPLETED BY Admin Kabupaten
+1
+7103110002000200
+APPROVED BY Pengawas
+92
+OPEN
+6
+REJECTED BY Pengawas
+3
+COMPLETED BY Admin Kabupaten
+2
+7103110005000200
+APPROVED BY Pengawas
+73
+COMPLETED BY Admin Kabupaten
+3
+OPEN
+3
+windametia67@gmail.com
+windametia67@gmail.com
+Total Assignment
+375
+7103040006000100
+APPROVED BY Pengawas
+90
+COMPLETED BY Admin Kabupaten
+33
+EDITED BY Admin Kabupaten
+1
+7103040006000200
+APPROVED BY Pengawas
+75
+COMPLETED BY Admin Kabupaten
+41
+EDITED BY Admin Kabupaten
+2
+7103040006000300
+APPROVED BY Pengawas
+86
+COMPLETED BY Admin Kabupaten
+2
+7103040011000600
+COMPLETED BY Admin Kabupaten
+25
+APPROVED BY Pengawas
+20
+yudhistiratangkabiringan@gmail.com
+yudhistiratangkabiringan@gmail.com
+Total Assignment
+405
+7103090009000100
+APPROVED BY Pengawas
+99
+COMPLETED BY Admin Kabupaten
+13
+OPEN
+7
+7103090009000400
+APPROVED BY Pengawas
+77
+OPEN
+35
+COMPLETED BY Admin Kabupaten
+1
+7103090009000500
+APPROVED BY Pengawas
+50
+COMPLETED BY Admin Kabupaten
+17
+OPEN
+3
+7103090014000200
+APPROVED BY Pengawas
+36
+COMPLETED BY Admin Kabupaten
+8
+OPEN
+7
+SUBMITTED BY Pencacah
+1
+7103090009000600
+APPROVED BY Pengawas
+42
+COMPLETED BY Admin Kabupaten
+9
