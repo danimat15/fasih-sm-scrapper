@@ -1066,6 +1066,7 @@ APPROVED BY Pengawas
 23
 COMPLETED BY Admin Kabupaten
 5
+
 ningsikarendehi968@gmail.com
 ningsikarendehi968@gmail.com
 Total Assignment
@@ -2233,6 +2234,7 @@ APPROVED BY Pengawas
 7103040012000300
 APPROVED BY Pengawas
 8
+
 jeniemonok7@gmail.com
 jeniemonok7@gmail.com
 Total Assignment
@@ -3260,6 +3262,7 @@ COMPLETED BY Admin Kabupaten
 10
 APPROVED BY Pengawas
 9
+
 simsonpetiunaung@gmail.com
 simsonpetiunaung@gmail.com
 Total Assignment
@@ -4457,6 +4460,7 @@ DRAFT
 2
 APPROVED BY Pengawas
 1
+
 anthymanambe8@gmail.com
 anthymanambe8@gmail.com
 Total Assignment
