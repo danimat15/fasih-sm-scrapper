@@ -876,6 +876,19 @@ def generate_report_2(public_dir):
         if max_row >= start_row:
             ws.delete_rows(start_row, max_row - start_row + 1)
             
+    def safe_val(r, col):
+        if col in r and pd.notna(r[col]):
+            try:
+                return int(r[col])
+            except Exception:
+                return 0
+        return 0
+
+    def safe_sum(df, col):
+        if col in df.columns:
+            return sum(df[col].fillna(0).astype(int))
+        return 0
+
     # Clean and rename first sheet to current date (e.g. "18 Juli")
     current_date_str = get_current_date_str()
     for name in list(wb.sheetnames):
@@ -905,34 +918,34 @@ def generate_report_2(public_dir):
         style_source = pml_row_style_cells if is_pml else row_style_cells
         
         # Target Prelist Eligible
-        f_val = int(row.get("Prelist Awal", 0))
-        g_val = int(row.get("Jumlah Prelist Usaha", 0))
+        f_val = safe_val(row, "Prelist Awal")
+        g_val = safe_val(row, "Jumlah Prelist Usaha")
         
         # Tidak Didata
-        meninggal = int(row.get("Meninggal", 0))
-        tidak_eligible = int(row.get("Tidak Eligible", 0))
-        tidak_dapat_ditemui = int(row.get("Tidak Dapat Ditemui Sampai Akhir Pendataan", 0))
-        tidak_ditemukan_kel = int(row.get("Tidak Ditemukan", 0))
+        meninggal = safe_val(row, "Meninggal")
+        tidak_eligible = safe_val(row, "Tidak Eligible")
+        tidak_dapat_ditemui = safe_val(row, "Tidak Dapat Ditemui Sampai Akhir Pendataan")
+        tidak_ditemukan_kel = safe_val(row, "Tidak Ditemukan")
         
         i_val = meninggal + tidak_eligible + tidak_dapat_ditemui + tidak_ditemukan_kel
         
-        tutup = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup", 0))
-        ganda = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda", 0))
-        tidak_ditemukan_ush = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan", 0))
+        tutup = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup")
+        ganda = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda")
+        tidak_ditemukan_ush = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan")
         
         j_val = tutup + ganda + tidak_ditemukan_ush
         
         # Status Muatan Pendataan
         o_val = i_val
-        p_val = int(row.get("Keluarga Baru", 0))
+        p_val = safe_val(row, "Keluarga Baru")
         r_val = j_val
-        s_val = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru", 0))
+        s_val = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru")
         
         # Realisasi
-        ditemukan_kel = int(row.get("Ditemukan", 0))
+        ditemukan_kel = safe_val(row, "Ditemukan")
         x_val = ditemukan_kel + i_val
         
-        usaha_bku = int(row.get("Jumlah Usaha BKU", 0))
+        usaha_bku = safe_val(row, "Jumlah Usaha BKU")
         y_val = usaha_bku + j_val
         
         aa_val = ditemukan_kel
@@ -1009,27 +1022,27 @@ def generate_report_2(public_dir):
     pml_rows = []
     for idx, row in df_merged.iterrows():
         # Target
-        f_val = int(row.get("Prelist Awal", 0))
-        g_val = int(row.get("Jumlah Prelist Usaha", 0))
+        f_val = safe_val(row, "Prelist Awal")
+        g_val = safe_val(row, "Jumlah Prelist Usaha")
         h_val = f_val + g_val
         
         # Tidak Didata
-        meninggal = int(row.get("Meninggal", 0))
-        tidak_eligible = int(row.get("Tidak Eligible", 0))
-        tidak_dapat_ditemui = int(row.get("Tidak Dapat Ditemui Sampai Akhir Pendataan", 0))
-        tidak_ditemukan_kel = int(row.get("Tidak Ditemukan", 0))
+        meninggal = safe_val(row, "Meninggal")
+        tidak_eligible = safe_val(row, "Tidak Eligible")
+        tidak_dapat_ditemui = safe_val(row, "Tidak Dapat Ditemui Sampai Akhir Pendataan")
+        tidak_ditemukan_kel = safe_val(row, "Tidak Ditemukan")
         i_val = meninggal + tidak_eligible + tidak_dapat_ditemui + tidak_ditemukan_kel
         
-        tutup = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup", 0))
-        ganda = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda", 0))
-        tidak_ditemukan_ush = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan", 0))
+        tutup = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup")
+        ganda = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda")
+        tidak_ditemukan_ush = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan")
         j_val = tutup + ganda + tidak_ditemukan_ush
         k_val = i_val + j_val
         
         # Realisasi
-        ditemukan_kel = int(row.get("Ditemukan", 0))
+        ditemukan_kel = safe_val(row, "Ditemukan")
         x_val = ditemukan_kel + i_val
-        usaha_bku = int(row.get("Jumlah Usaha BKU", 0))
+        usaha_bku = safe_val(row, "Jumlah Usaha BKU")
         y_val = usaha_bku + j_val
         z_val = x_val + y_val
         
@@ -1038,7 +1051,7 @@ def generate_report_2(public_dir):
         ac_val = aa_val + ab_val
         
         progress_pct = z_val / h_val if h_val > 0 else 0
-        ush_b = int(row.get("JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru", 0))
+        ush_b = safe_val(row, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru")
         ush_sel = ush_b - j_val
         
         obj = {
@@ -1046,7 +1059,7 @@ def generate_report_2(public_dir):
             'f_val': f_val, 'g_val': g_val, 'h_val': h_val,
             'i_val': i_val, 'j_val': j_val, 'k_val': k_val,
             'l_val': f_val - i_val, 'm_val': g_val - j_val, 'n_val': (f_val - i_val) + (g_val - j_val),
-            'o_val': i_val, 'p_val': int(row.get("Keluarga Baru", 0)),
+            'o_val': i_val, 'p_val': safe_val(row, "Keluarga Baru"),
             'r_val': j_val, 's_val': ush_b,
             'x_val': x_val, 'y_val': y_val, 'z_val': z_val,
             'aa_val': aa_val, 'ab_val': ab_val, 'ac_val': ac_val,
@@ -1268,31 +1281,31 @@ def generate_report_2(public_dir):
         df_sub = df_merged[df_merged["nama_kec"].isin(mapped_kec_codes)]
         
         # Target
-        f_val = sum(df_sub["Prelist Awal"].fillna(0).astype(int))
-        g_val = sum(df_sub["Jumlah Prelist Usaha"].fillna(0).astype(int))
+        f_val = safe_sum(df_sub, "Prelist Awal")
+        g_val = safe_sum(df_sub, "Jumlah Prelist Usaha")
         
         # Tidak Didata
-        meninggal = sum(df_sub["Meninggal"].fillna(0).astype(int))
-        tidak_eligible = sum(df_sub["Tidak Eligible"].fillna(0).astype(int))
-        tidak_dapat_ditemui = sum(df_sub["Tidak Dapat Ditemui Sampai Akhir Pendataan"].fillna(0).astype(int))
-        tidak_ditemukan_kel = sum(df_sub["Tidak Ditemukan"].fillna(0).astype(int))
+        meninggal = safe_sum(df_sub, "Meninggal")
+        tidak_eligible = safe_sum(df_sub, "Tidak Eligible")
+        tidak_dapat_ditemui = safe_sum(df_sub, "Tidak Dapat Ditemui Sampai Akhir Pendataan")
+        tidak_ditemukan_kel = safe_sum(df_sub, "Tidak Ditemukan")
         i_val = meninggal + tidak_eligible + tidak_dapat_ditemui + tidak_ditemukan_kel
         
-        tutup = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup"].fillna(0).astype(int))
-        ganda = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda"].fillna(0).astype(int))
-        tidak_ditemukan_ush = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan"].fillna(0).astype(int))
+        tutup = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup")
+        ganda = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda")
+        tidak_ditemukan_ush = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan")
         j_val = tutup + ganda + tidak_ditemukan_ush
         
         # Status Muatan Pendataan
         o_val = i_val
-        p_val = sum(df_sub["Keluarga Baru"].fillna(0).astype(int))
+        p_val = safe_sum(df_sub, "Keluarga Baru")
         r_val = j_val
-        s_val = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru"].fillna(0).astype(int))
+        s_val = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Baru")
         
         # Realisasi
-        ditemukan_kel = sum(df_sub["Ditemukan"].fillna(0).astype(int))
+        ditemukan_kel = safe_sum(df_sub, "Ditemukan")
         x_val = ditemukan_kel + i_val
-        usaha_bku = sum(df_sub["Jumlah Usaha BKU"].fillna(0).astype(int))
+        usaha_bku = safe_sum(df_sub, "Jumlah Usaha BKU")
         y_val = usaha_bku + j_val
         
         aa_val = ditemukan_kel
@@ -1379,24 +1392,24 @@ def generate_report_2(public_dir):
         df_sub = df_merged[df_merged["nama_kec"].isin(mapped_codes)]
         
         # Calculate progress
-        target_kel = sum(df_sub["Prelist Awal"].fillna(0).astype(int))
-        target_ush = sum(df_sub["Jumlah Prelist Usaha"].fillna(0).astype(int))
+        target_kel = safe_sum(df_sub, "Prelist Awal")
+        target_ush = safe_sum(df_sub, "Jumlah Prelist Usaha")
         total_target = target_kel + target_ush
         
         # Realisasi
-        meninggal = sum(df_sub["Meninggal"].fillna(0).astype(int))
-        tidak_eligible = sum(df_sub["Tidak Eligible"].fillna(0).astype(int))
-        tidak_dapat_ditemui = sum(df_sub["Tidak Dapat Ditemui Sampai Akhir Pendataan"].fillna(0).astype(int))
-        tidak_ditemukan_kel = sum(df_sub["Tidak Ditemukan"].fillna(0).astype(int))
+        meninggal = safe_sum(df_sub, "Meninggal")
+        tidak_eligible = safe_sum(df_sub, "Tidak Eligible")
+        tidak_dapat_ditemui = safe_sum(df_sub, "Tidak Dapat Ditemui Sampai Akhir Pendataan")
+        tidak_ditemukan_kel = safe_sum(df_sub, "Tidak Ditemukan")
         i_val = meninggal + tidak_eligible + tidak_dapat_ditemui + tidak_ditemukan_kel
-        ditemukan_kel = sum(df_sub["Ditemukan"].fillna(0).astype(int))
+        ditemukan_kel = safe_sum(df_sub, "Ditemukan")
         x_val = ditemukan_kel + i_val
         
-        tutup = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup"].fillna(0).astype(int))
-        ganda = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda"].fillna(0).astype(int))
-        tidak_ditemukan_ush = sum(df_sub["JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan"].fillna(0).astype(int))
+        tutup = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tutup")
+        ganda = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Ganda")
+        tidak_ditemukan_ush = safe_sum(df_sub, "JUMLAH USAHA BKU MENURUT STATUS KEBERADAAN USAHA - Tidak Ditemukan")
         j_val = tutup + ganda + tidak_ditemukan_ush
-        usaha_bku = sum(df_sub["Jumlah Usaha BKU"].fillna(0).astype(int))
+        usaha_bku = safe_sum(df_sub, "Jumlah Usaha BKU")
         y_val = usaha_bku + j_val
         
         realisasi_total = x_val + y_val
