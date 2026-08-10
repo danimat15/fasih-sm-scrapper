@@ -119,12 +119,14 @@ export default function MonitoringPage() {
     const cumulativeTarget = elapsedDays * dailyTarget;
     const diff = realisasiPct - cumulativeTarget;
     
+    const is100Pct = realisasiPct >= 100;
+    
     return {
       elapsedDays,
       cumulativeTarget,
       diff,
-      isAboveTarget: diff >= 0,
-      isBelowHalfTarget: realisasiPct < (0.5 * cumulativeTarget)
+      isAboveTarget: is100Pct || diff >= 0,
+      isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
     };
   };
 

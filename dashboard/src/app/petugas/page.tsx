@@ -193,12 +193,14 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   const cumulativeTarget = elapsedDays * dailyTarget;
   const diff = realisasiPct - cumulativeTarget;
   
+  const is100Pct = realisasiPct >= 100;
+  
   return {
     elapsedDays,
     cumulativeTarget,
     diff,
-    isAboveTarget: diff >= 0,
-    isBelowHalfTarget: realisasiPct < (0.5 * cumulativeTarget)
+    isAboveTarget: is100Pct || diff >= 0,
+    isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
   };
 };
 
@@ -1248,12 +1250,16 @@ export default function PetugasPage() {
 
   // Highlight rules functions
   const isPmlRed = (o: OfficerStats) => {
-    // PML merah jika approve dan rejectnya masih 0
+    // PML merah jika approve dan rejectnya masih 0 (kecuali jika realisasi sudah 100%)
+    const pct = o.total > 0 ? (o.realisasi / o.total) * 100 : 0;
+    if (pct >= 100 || (o.total > 0 && o.realisasi >= o.total)) return false;
     return o.category.toLowerCase() === "pengawas" && o.approve === 0 && o.reject === 0;
   };
 
   const isPclRed = (o: OfficerStats) => {
-    // PCL merah jika Draft, Submit, Reject, Approve, dan Revoked = 0
+    // PCL merah jika Draft, Submit, Reject, Approve, dan Revoked = 0 (kecuali jika realisasi sudah 100%)
+    const pct = o.total > 0 ? (o.realisasi / o.total) * 100 : 0;
+    if (pct >= 100 || (o.total > 0 && o.realisasi >= o.total)) return false;
     return (
       o.category.toLowerCase() === "pencacah" &&
       o.draft === 0 &&
@@ -1677,9 +1683,10 @@ export default function PetugasPage() {
                         </tr>
                       ) : (
                         filteredKecamatans.map((k, index) => {
-                          const isRed = k.approve === 0 && k.reject === 0;
-                          const isExpanded = expandedRows.has(k.namaKec);
                           const pctRealisasi = k.total > 0 ? ((k.realisasi / k.total) * 100).toFixed(2) : "0.00";
+                          const is100Pct = parseFloat(pctRealisasi) >= 100 || (k.total > 0 && k.realisasi >= k.total);
+                          const isRed = is100Pct ? false : (k.approve === 0 && k.reject === 0);
+                          const isExpanded = expandedRows.has(k.namaKec);
 
                           const targetInfo = calculateTargetAndDiff(parseFloat(pctRealisasi));
                           let rowColor = "bg-amber-500/5 dark:bg-amber-950/10";
@@ -2110,9 +2117,10 @@ export default function PetugasPage() {
                         </tr>
                       ) : (
                         filteredOfficers.map((o, index) => {
-                          const isRed = activeTab === "pcl" ? isPclRed(o) : isPmlRed(o);
-                          const isExpanded = expandedRows.has(o.email);
                           const pctRealisasi = o.total > 0 ? ((o.realisasi / o.total) * 100).toFixed(2) : "0.00";
+                          const is100Pct = parseFloat(pctRealisasi) >= 100 || (o.total > 0 && o.realisasi >= o.total);
+                          const isRed = is100Pct ? false : (activeTab === "pcl" ? isPclRed(o) : isPmlRed(o));
+                          const isExpanded = expandedRows.has(o.email);
                           const targetInfo = calculateTargetAndDiff(parseFloat(pctRealisasi));
                           let rowColor = "bg-amber-500/5 dark:bg-amber-950/10";
                           if (targetInfo.isAboveTarget) {
