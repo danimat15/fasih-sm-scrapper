@@ -159,7 +159,7 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   }
   elapsedDays = Math.max(0, elapsedDays);
   
-  const dailyTarget = 1.67;
+  const dailyTarget = 98.0 / 60.0;
   const cumulativeTarget = elapsedDays * dailyTarget;
   const diff = realisasiPct - cumulativeTarget;
   
@@ -167,9 +167,11 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   
   return {
     elapsedDays,
+    dailyTarget,
     cumulativeTarget,
     diff,
-    isAboveTarget: is100Pct || diff >= 0,
+    is100Pct,
+    isAboveTarget: !is100Pct && diff >= 0,
     isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
   };
 };
@@ -1256,7 +1258,11 @@ export default function TabulasiPage() {
           <span>Realisasi:</span>
           <span>{stats.realisasi}</span>
         </div>
-        <div className="font-extrabold text-orange-600 dark:text-orange-450 flex justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-0.5 mb-1">
+        <div className={`font-extrabold flex justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-0.5 mb-1 ${
+          parseFloat(pct) >= 100
+            ? "text-blue-600 dark:text-blue-400"
+            : "text-orange-600 dark:text-orange-450"
+        }`}>
           <span>% Realisasi:</span>
           <span>{pct}%</span>
         </div>
@@ -1384,19 +1390,22 @@ export default function TabulasiPage() {
                 <span className="font-bold text-slate-800 dark:text-slate-200">Ketentuan Pewarnaan & Rekapitulasi Target Harian:</span>
                 <ul className="list-disc list-inside mt-1 flex flex-col gap-1 text-slate-600 dark:text-slate-300">
                   <li>
-                    Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                    Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
                   </li>
                   <li>
                     Aturan Pewarnaan Baris & Realisasi (PCL, PML, Kecamatan):
                     <ul className="list-disc list-inside pl-5 mt-0.5 flex flex-col gap-0.5">
                       <li>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                        <span className="text-blue-600 dark:text-blue-400 font-extrabold">Biru</span>: Realisasi tuntas (<span className="font-bold font-mono">&gt;= 100,00%</span>).
+                      </li>
+                      <li>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}% s.d &lt; 100,00%</span>).
                       </li>
                       <li>
                         <span className="text-red-500 dark:text-red-400 font-extrabold">Merah</span>: Di bawah 50% target harian akumulatif (<span className="font-bold font-mono">&lt; {(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}%</span>).
                       </li>
                       <li>
-                        <span className="text-amber-650 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                        <span className="text-amber-650 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d &lt; {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
                       </li>
                     </ul>
                   </li>

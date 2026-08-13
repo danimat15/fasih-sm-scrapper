@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
     }
     elapsedDays = Math.max(0, elapsedDays);
     
-    const dailyTarget = 1.67;
+    const dailyTarget = 98.0 / 60.0;
     const cumulativeTarget = elapsedDays * dailyTarget;
     const diff = realisasiPct - cumulativeTarget;
     
@@ -123,9 +123,11 @@ export default function LeaderboardPage() {
     
     return {
       elapsedDays,
+      dailyTarget,
       cumulativeTarget,
       diff,
-      isAboveTarget: is100Pct || diff >= 0,
+      is100Pct,
+      isAboveTarget: !is100Pct && diff >= 0,
       isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
     };
   };
@@ -136,7 +138,9 @@ export default function LeaderboardPage() {
     return (
       <div className="flex flex-col items-center gap-0.5 my-1">
         <span className={`inline-flex px-2 py-0.5 rounded-full font-extrabold text-[10px] sm:text-xs whitespace-nowrap ${
-          targetInfo.isAboveTarget
+          targetInfo.is100Pct
+            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+            : targetInfo.isAboveTarget
             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20"
             : targetInfo.isBelowHalfTarget
             ? "bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/20"
@@ -145,7 +149,9 @@ export default function LeaderboardPage() {
           {pctVal.toFixed(2)}%
         </span>
         <span className={`text-[9px] font-bold whitespace-nowrap ${
-          targetInfo.isAboveTarget
+          targetInfo.is100Pct
+            ? "text-blue-600 dark:text-blue-400"
+            : targetInfo.isAboveTarget
             ? "text-emerald-600 dark:text-emerald-450"
             : targetInfo.isBelowHalfTarget
             ? "text-rose-500 dark:text-rose-405"
@@ -342,19 +348,22 @@ export default function LeaderboardPage() {
           <span className="font-bold text-slate-800 dark:text-slate-200">Ketentuan Pewarnaan & Target Harian Akumulatif:</span>
           <ul className="list-disc list-inside mt-1 flex flex-col gap-1 text-slate-600 dark:text-slate-300">
             <li>
-              Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+              Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
             </li>
             <li>
               Aturan Pewarnaan Realisasi (%):
               <ul className="list-disc list-inside pl-5 mt-0.5 flex flex-col gap-0.5">
                 <li>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                  <span className="text-blue-600 dark:text-blue-400 font-extrabold">Biru</span>: Realisasi tuntas (<span className="font-bold font-mono">&gt;= 100,00%</span>).
+                </li>
+                <li>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}% s.d &lt; 100,00%</span>).
                 </li>
                 <li>
                   <span className="text-red-500 dark:text-red-400 font-extrabold">Merah</span>: Di bawah 50% target harian akumulatif (<span className="font-bold font-mono">&lt; {(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}%</span>).
                 </li>
                 <li>
-                  <span className="text-amber-600 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                  <span className="text-amber-600 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d &lt; {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
                 </li>
               </ul>
             </li>

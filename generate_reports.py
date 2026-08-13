@@ -112,7 +112,7 @@ def calculate_target_info():
         elapsed_days = diff_days - 1
     elapsed_days = max(0, elapsed_days)
     
-    daily_target = 1.67
+    daily_target = 98.0 / 60.0
     cumulative_target = elapsed_days * daily_target
     
     return {
@@ -122,11 +122,14 @@ def calculate_target_info():
     }
 
 def get_realisasi_color(realisasi_pct, cumulative_target):
-    """Return (font, fill) tuple based on realisasi vs target thresholds.
-    Green: above cumulative target
-    Amber/Yellow: between 50% of target and target
+    """Return (font, fill) tuple based on realisasi vs target thresholds:
+    Blue: realisasi_pct >= 100%
+    Green: above cumulative target and < 100%
+    Amber/Yellow: between 50% of target and cumulative target
     Red: below 50% of target
     """
+    blue_fill = PatternFill(fill_type="solid", start_color="D9E1F2", end_color="D9E1F2")
+    blue_font = Font(color="1F4E78", bold=True)
     green_fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
     green_font = Font(color="006100", bold=True)
     amber_fill = PatternFill(fill_type="solid", start_color="FFEB9C", end_color="FFEB9C")
@@ -136,7 +139,9 @@ def get_realisasi_color(realisasi_pct, cumulative_target):
     
     half_target = 0.5 * cumulative_target
     
-    if realisasi_pct >= cumulative_target:
+    if realisasi_pct >= 100.0:
+        return blue_font, blue_fill
+    elif realisasi_pct >= cumulative_target:
         return green_font, green_fill
     elif realisasi_pct < half_target:
         return red_font, red_fill
@@ -145,10 +150,9 @@ def get_realisasi_color(realisasi_pct, cumulative_target):
 
 def get_progres_harian_color(progres_harian_pct):
     """Return (font, fill) tuple based on progres harian % thresholds:
-    Green: > 1.67%
-    Amber/Yellow: 1.00% to 1.67%
+    Green: > (98/60)%
+    Amber/Yellow: 1.00% to (98/60)%
     Red: < 1.00%
-    Note: progres_harian_pct is in percentage points (e.g., 1.67 for 1.67%).
     """
     green_fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
     green_font = Font(color="006100", bold=True)
@@ -157,7 +161,8 @@ def get_progres_harian_color(progres_harian_pct):
     red_fill = PatternFill(fill_type="solid", start_color="FFC7CE", end_color="FFC7CE")
     red_font = Font(color="9C0006", bold=True)
     
-    if progres_harian_pct > 1.67:
+    daily_target_val = 98.0 / 60.0
+    if progres_harian_pct > daily_target_val:
         return green_font, green_fill
     elif progres_harian_pct >= 1.0:
         return amber_font, amber_fill
@@ -380,8 +385,11 @@ def generate_report_1(public_dir):
     ws1["E4"].font = target_value_font
     
     # Legend for coloring
-    ws1["G3"] = "Keterangan Warna Realisasi:"
-    ws1["G3"].font = Font(name="Calibri", size=9, bold=True)
+    ws1["F3"] = "Keterangan Warna Realisasi:"
+    ws1["F3"].font = Font(name="Calibri", size=9, bold=True)
+    ws1["F4"] = "Biru = 100%"
+    ws1["F4"].font = Font(name="Calibri", size=9, color="1F4E78", bold=True)
+    ws1["F4"].fill = PatternFill(fill_type="solid", start_color="D9E1F2", end_color="D9E1F2")
     ws1["G4"] = f"Hijau >= {cumulative_target_pct:.2f}%"
     ws1["G4"].font = Font(name="Calibri", size=9, color="006100", bold=True)
     ws1["G4"].fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")

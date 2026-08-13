@@ -222,7 +222,7 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   }
   elapsedDays = Math.max(0, elapsedDays);
   
-  const dailyTarget = 1.67;
+  const dailyTarget = 98.0 / 60.0;
   const cumulativeTarget = elapsedDays * dailyTarget;
   const diff = realisasiPct - cumulativeTarget;
   
@@ -230,9 +230,11 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   
   return {
     elapsedDays,
+    dailyTarget,
     cumulativeTarget,
     diff,
-    isAboveTarget: is100Pct || diff >= 0,
+    is100Pct,
+    isAboveTarget: !is100Pct && diff >= 0,
     isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
   };
 };
@@ -1088,7 +1090,9 @@ export default function DashboardPage() {
           <>
             {/* Target Monitoring Banner */}
             <div className={`mb-8 p-6 rounded-3xl border transition-all ${
-              kabTargetInfo.isAboveTarget
+              kabTargetInfo.is100Pct
+                ? "bg-blue-500/5 dark:bg-blue-950/10 border-blue-500/20 text-blue-600 dark:text-blue-400"
+                : kabTargetInfo.isAboveTarget
                 ? "bg-emerald-500/5 dark:bg-emerald-950/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                 : kabTargetInfo.isBelowHalfTarget
                 ? "bg-red-500/5 dark:bg-red-950/10 border-red-500/20 text-red-600 dark:text-red-400"
@@ -1097,7 +1101,9 @@ export default function DashboardPage() {
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-3">
                   <div className={`p-3 rounded-2xl shrink-0 ${
-                    kabTargetInfo.isAboveTarget
+                    kabTargetInfo.is100Pct
+                      ? "bg-blue-500/10 text-blue-500"
+                      : kabTargetInfo.isAboveTarget
                       ? "bg-emerald-500/10 text-emerald-500"
                       : kabTargetInfo.isBelowHalfTarget
                       ? "bg-red-500/10 text-red-500"
@@ -1110,20 +1116,22 @@ export default function DashboardPage() {
                       Monitoring Target Kinerja Kabupaten Kepulauan Sangihe
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.cumulativeTarget.toFixed(2)}%</span>)
+                      Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.cumulativeTarget.toFixed(2)}%</span>)
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-col items-start md:items-end bg-white dark:bg-slate-900/60 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800/80 shadow-sm min-w-[200px] w-full md:w-auto">
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Status Capaian</span>
                   <span className={`text-sm sm:text-base font-black mt-1 flex items-center gap-1.5 ${
-                    kabTargetInfo.isAboveTarget
+                    kabTargetInfo.is100Pct
+                      ? "text-blue-600 dark:text-blue-400"
+                      : kabTargetInfo.isAboveTarget
                       ? "text-emerald-600 dark:text-emerald-400"
                       : kabTargetInfo.isBelowHalfTarget
                       ? "text-red-500 dark:text-red-400"
                       : "text-amber-600 dark:text-amber-500"
                   }`}>
-                    {kabTargetInfo.isAboveTarget ? "DI ATAS TARGET" : kabTargetInfo.isBelowHalfTarget ? "DI BAWAH 50% TARGET" : "DI BAWAH TARGET (WASPADA)"}
+                    {kabTargetInfo.is100Pct ? "TUNTAS 100% (SELESAI)" : kabTargetInfo.isAboveTarget ? "DI ATAS TARGET" : kabTargetInfo.isBelowHalfTarget ? "DI BAWAH 50% TARGET" : "DI BAWAH TARGET (WASPADA)"}
                   </span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-1">
                     Realisasi: <span className="font-extrabold">{kabPct.toFixed(2)}%</span> ({kabTargetInfo.diff >= 0 ? `Lebih +${kabTargetInfo.diff.toFixed(2)}%` : `Kurang ${kabTargetInfo.diff.toFixed(2)}%`})
@@ -1438,7 +1446,11 @@ export default function DashboardPage() {
                       let bgClass = "bg-amber-500/10";
                       let textClass = "text-amber-600 dark:text-amber-500";
                       
-                      if (targetInfo.isAboveTarget) {
+                      if (targetInfo.is100Pct) {
+                        colorClass = "from-blue-600 to-indigo-500";
+                        bgClass = "bg-blue-500/10";
+                        textClass = "text-blue-600 dark:text-blue-400";
+                      } else if (targetInfo.isAboveTarget) {
                         colorClass = "from-emerald-500 to-teal-500";
                         bgClass = "bg-emerald-500/10";
                         textClass = "text-emerald-650 dark:text-emerald-450";

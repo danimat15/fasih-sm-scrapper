@@ -189,7 +189,7 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   }
   elapsedDays = Math.max(0, elapsedDays);
   
-  const dailyTarget = 1.67;
+  const dailyTarget = 98.0 / 60.0;
   const cumulativeTarget = elapsedDays * dailyTarget;
   const diff = realisasiPct - cumulativeTarget;
   
@@ -197,9 +197,11 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   
   return {
     elapsedDays,
+    dailyTarget,
     cumulativeTarget,
     diff,
-    isAboveTarget: is100Pct || diff >= 0,
+    is100Pct,
+    isAboveTarget: !is100Pct && diff >= 0,
     isBelowHalfTarget: !is100Pct && realisasiPct < (0.5 * cumulativeTarget)
   };
 };
@@ -1590,19 +1592,22 @@ export default function PetugasPage() {
                 <span className="font-bold text-slate-800 dark:text-slate-200">Ketentuan Pewarnaan & Rekapitulasi Target Harian:</span>
                 <ul className="list-disc list-inside mt-1 flex flex-col gap-1 text-slate-600 dark:text-slate-300">
                   <li>
-                    Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                    Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
                   </li>
                   <li>
                     Aturan Pewarnaan Baris & Realisasi (PCL, PML, Kecamatan):
                     <ul className="list-disc list-inside pl-5 mt-0.5 flex flex-col gap-0.5">
                       <li>
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                        <span className="text-blue-600 dark:text-blue-400 font-extrabold">Biru</span>: Realisasi tuntas (<span className="font-bold font-mono">&gt;= 100,00%</span>).
+                      </li>
+                      <li>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">Hijau</span>: Di atas target harian akumulatif (<span className="font-bold font-mono">&gt;= {bannerTargetInfo.cumulativeTarget.toFixed(2)}% s.d &lt; 100,00%</span>).
                       </li>
                       <li>
                         <span className="text-red-500 dark:text-red-400 font-extrabold">Merah</span>: Di bawah 50% target harian akumulatif (<span className="font-bold font-mono">&lt; {(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}%</span>).
                       </li>
                       <li>
-                        <span className="text-amber-650 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+                        <span className="text-amber-650 dark:text-amber-500 font-extrabold">Kuning</span>: Di antara 50% target s.d target harian akumulatif (<span className="font-bold font-mono">{(bannerTargetInfo.cumulativeTarget * 0.5).toFixed(2)}% s.d &lt; {bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
                       </li>
                     </ul>
                   </li>
@@ -1690,7 +1695,9 @@ export default function PetugasPage() {
 
                           const targetInfo = calculateTargetAndDiff(parseFloat(pctRealisasi));
                           let rowColor = "bg-amber-500/5 dark:bg-amber-950/10";
-                          if (targetInfo.isAboveTarget) {
+                          if (targetInfo.is100Pct) {
+                            rowColor = "bg-blue-500/5 dark:bg-blue-950/10";
+                          } else if (targetInfo.isAboveTarget) {
                             rowColor = "bg-emerald-500/5 dark:bg-emerald-950/10";
                           } else if (targetInfo.isBelowHalfTarget) {
                             rowColor = "bg-rose-500/5 dark:bg-rose-950/10";
@@ -1817,9 +1824,11 @@ export default function PetugasPage() {
                                 <td className="py-3 px-4 text-center sticky right-0 z-10 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group-hover:bg-slate-50 dark:group-hover:bg-slate-950 transition-colors">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className={`inline-flex px-2.5 py-0.5 rounded-full font-extrabold text-xs ${
-                                      targetInfo.isAboveTarget
+                                      targetInfo.is100Pct
+                                        ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                                        : targetInfo.isAboveTarget
                                         ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20"
-                                        : targetInfo.isBelowHalfTarget
+                                        : (targetInfo.isBelowHalfTarget || isRed)
                                         ? "bg-rose-500/10 text-rose-600 dark:text-rose-450 border border-rose-500/20"
                                         : "bg-amber-500/10 text-amber-600 dark:text-amber-500 border border-amber-500/20"
                                     }`}>
@@ -1831,10 +1840,12 @@ export default function PetugasPage() {
                                       </span>
                                     )}
                                     <span className={`text-[9px] font-bold ${
-                                      targetInfo.isAboveTarget
+                                      targetInfo.is100Pct
+                                        ? "text-blue-600 dark:text-blue-400"
+                                        : targetInfo.isAboveTarget
                                         ? "text-emerald-600 dark:text-emerald-450"
-                                        : targetInfo.isBelowHalfTarget
-                                        ? "text-rose-500 dark:text-rose-405"
+                                        : (targetInfo.isBelowHalfTarget || isRed)
+                                        ? "text-rose-500 dark:text-rose-450"
                                         : "text-amber-600 dark:text-amber-500"
                                     }`}>
                                       {targetInfo.diff >= 0 
@@ -1882,7 +1893,9 @@ export default function PetugasPage() {
                                               const pmlPct = pml.total > 0 ? ((pml.realisasi / pml.total) * 100).toFixed(2) : "0.00";
                                               const pmlTargetInfo = calculateTargetAndDiff(parseFloat(pmlPct));
                                               let rowColor = "bg-amber-500/5 dark:bg-amber-950/10";
-                                              if (pmlTargetInfo.isAboveTarget) {
+                                              if (pmlTargetInfo.is100Pct) {
+                                                rowColor = "bg-blue-500/5 dark:bg-blue-950/10";
+                                              } else if (pmlTargetInfo.isAboveTarget) {
                                                 rowColor = "bg-emerald-500/5 dark:bg-emerald-950/10";
                                               } else if (pmlTargetInfo.isBelowHalfTarget) {
                                                 rowColor = "bg-rose-500/5 dark:bg-rose-950/10";
@@ -2123,7 +2136,9 @@ export default function PetugasPage() {
                           const isExpanded = expandedRows.has(o.email);
                           const targetInfo = calculateTargetAndDiff(parseFloat(pctRealisasi));
                           let rowColor = "bg-amber-500/5 dark:bg-amber-950/10";
-                          if (targetInfo.isAboveTarget) {
+                          if (targetInfo.is100Pct) {
+                            rowColor = "bg-blue-500/5 dark:bg-blue-950/10";
+                          } else if (targetInfo.isAboveTarget) {
                             rowColor = "bg-emerald-500/5 dark:bg-emerald-950/10";
                           } else if (targetInfo.isBelowHalfTarget || isRed) {
                             rowColor = "bg-rose-500/5 dark:bg-rose-950/10";
