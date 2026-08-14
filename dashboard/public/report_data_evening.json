@@ -1,7 +1,7 @@
 {
   "report_type": "sore",
-  "date": "14 Agustus 2026",
-  "time": "16.11 WITA",
+  "date": "13 Agustus 2026",
+  "time": "20.18 WITA",
   "kecamatan": [
     {
       "kecamatan": "Manganitu Selatan",
@@ -425,7 +425,7 @@
       "target": 564,
       "open": 8,
       "draft": 0,
-      "submit": 11,
+      "submit": 1,
       "reject": 0,
       "approved": 555,
       "progres": 0,
@@ -691,7 +691,7 @@
       "target": 471,
       "open": 0,
       "draft": 0,
-      "submit": 3,
+      "submit": 0,
       "reject": 0,
       "approved": 470,
       "progres": 1,
@@ -2447,8 +2447,8 @@
       "reject": 0,
       "approved": 3072,
       "revoke": 0,
-      "realisasi": 3071,
-      "realisasi_pct": 99.96744791666666
+      "realisasi": 3072,
+      "realisasi_pct": 100.0
     },
     {
       "nama": "Yulianti Manambe",
