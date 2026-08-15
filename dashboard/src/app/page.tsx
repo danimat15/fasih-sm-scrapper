@@ -240,6 +240,20 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
 };
 
 
+const getFormattedTodayWita = (): string => {
+  const MONTHS_ID = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+  ];
+  const now = new Date();
+  const day = now.getDate();
+  const month = MONTHS_ID[now.getMonth()];
+  const year = now.getFullYear();
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  return `${day} ${month} ${year} pukul ${hours}.${minutes} WITA`;
+};
+
 export default function DashboardPage() {
   // Theme state
   const [showFilters, setShowFilters] = useState(false);
@@ -249,7 +263,7 @@ export default function DashboardPage() {
   const [dashboardRawData, setDashboardRawData] = useState<DashboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("15 Agustus 2026 pukul 09.28 WITA");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
 
   // Summary states from CSV files
   const [totalPrelistSummary, setTotalPrelistSummary] = useState<number>(0);
@@ -493,7 +507,7 @@ export default function DashboardPage() {
       if (loadedTimestamp) {
         setLastUpdated(loadedTimestamp);
       } else {
-        setLastUpdated("15 Agustus 2026 pukul 09.28 WITA");
+        setLastUpdated(getFormattedTodayWita());
       }
       
     } catch (err: any) {
@@ -1041,7 +1055,7 @@ export default function DashboardPage() {
                 <span className="text-[10px] sm:text-xs text-orange-200">Terakhir Diperbarui</span>
                 <span className="text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
-                  <span className="truncate">{loading && !lastUpdated ? "Menyinkronkan..." : lastUpdated || "15 Agustus 2026 pukul 09.28 WITA"}</span>
+                  <span className="truncate">{loading && !lastUpdated ? "Menyinkronkan..." : lastUpdated || getFormattedTodayWita()}</span>
                 </span>
               </div>
               <button

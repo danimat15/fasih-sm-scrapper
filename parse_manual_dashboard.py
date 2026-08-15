@@ -37,7 +37,12 @@ STATUS_NORMALIZE = {
 }
 
 def get_wita_timestamp():
-    return "13 Agustus 2026 pukul 20.18 WITA"
+    now = datetime.now(wita_tz)
+    bulan_list = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ]
+    return f"{now.day} {bulan_list[now.month - 1]} {now.year} pukul {now.strftime('%H.%M')} WITA"
 
 def format_custom_timestamp(raw_input: str) -> str:
     if not raw_input or not raw_input.strip():

@@ -10,8 +10,13 @@ wita_tz = timezone(timedelta(hours=8))
 START_TIME = datetime.now(wita_tz)
 
 def get_wita_timestamp():
-    # Central Indonesian Time (WITA) - Static 20.18 per request
-    return "13 Agustus 2026 pukul 20.18 WITA"
+    # Central Indonesian Time (WITA = UTC+8)
+    now = datetime.now(wita_tz)
+    bulan_list = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    ]
+    return f"{now.day} {bulan_list[now.month - 1]} {now.year} pukul {now.strftime('%H.%M')} WITA"
 
 def normalize_scale(scale_str):
     if not scale_str:
