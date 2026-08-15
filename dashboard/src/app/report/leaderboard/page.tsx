@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
     }
     elapsedDays = Math.max(0, elapsedDays);
     
-    const dailyTarget = 98.0 / 60.0;
+    const dailyTarget = 100.0 / 60.0;
     const cumulativeTarget = elapsedDays * dailyTarget;
     const diff = realisasiPct - cumulativeTarget;
     
@@ -348,7 +348,7 @@ export default function LeaderboardPage() {
           <span className="font-bold text-slate-800 dark:text-slate-200">Ketentuan Pewarnaan & Target Harian Akumulatif:</span>
           <ul className="list-disc list-inside mt-1 flex flex-col gap-1 text-slate-600 dark:text-slate-300">
             <li>
-              Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
+              Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{bannerTargetInfo.cumulativeTarget.toFixed(2)}%</span>).
             </li>
             <li>
               Aturan Pewarnaan Realisasi (%):

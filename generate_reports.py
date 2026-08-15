@@ -112,7 +112,7 @@ def calculate_target_info():
         elapsed_days = diff_days - 1
     elapsed_days = max(0, elapsed_days)
     
-    daily_target = 98.0 / 60.0
+    daily_target = 100.0 / 60.0
     cumulative_target = elapsed_days * daily_target
     
     return {
@@ -150,8 +150,8 @@ def get_realisasi_color(realisasi_pct, cumulative_target):
 
 def get_progres_harian_color(progres_harian_pct):
     """Return (font, fill) tuple based on progres harian % thresholds:
-    Green: > (98/60)%
-    Amber/Yellow: 1.00% to (98/60)%
+    Green: > (100/60)%
+    Amber/Yellow: 1.00% to (100/60)%
     Red: < 1.00%
     """
     green_fill = PatternFill(fill_type="solid", start_color="C6EFCE", end_color="C6EFCE")
@@ -161,7 +161,7 @@ def get_progres_harian_color(progres_harian_pct):
     red_fill = PatternFill(fill_type="solid", start_color="FFC7CE", end_color="FFC7CE")
     red_font = Font(color="9C0006", bold=True)
     
-    daily_target_val = 98.0 / 60.0
+    daily_target_val = 100.0 / 60.0
     if progres_harian_pct > daily_target_val:
         return green_font, green_fill
     elif progres_harian_pct >= 1.0:

@@ -222,7 +222,7 @@ const calculateTargetAndDiff = (realisasiPct: number) => {
   }
   elapsedDays = Math.max(0, elapsedDays);
   
-  const dailyTarget = 98.0 / 60.0;
+  const dailyTarget = 100.0 / 60.0;
   const cumulativeTarget = elapsedDays * dailyTarget;
   const diff = realisasiPct - cumulativeTarget;
   
@@ -1116,7 +1116,7 @@ export default function DashboardPage() {
                       Monitoring Target Kinerja Kabupaten Kepulauan Sangihe
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,63%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.cumulativeTarget.toFixed(2)}%</span>)
+                      Target Harian: <span className="font-bold text-slate-800 dark:text-slate-200">1,67%</span> per hari | Dimulai: <span className="font-bold text-slate-800 dark:text-slate-200">15 Juni 2026</span> | Hari ke-<span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.elapsedDays}</span> (Target Akumulatif: <span className="font-bold text-slate-800 dark:text-slate-200">{kabTargetInfo.cumulativeTarget.toFixed(2)}%</span>)
                     </p>
                   </div>
                 </div>
