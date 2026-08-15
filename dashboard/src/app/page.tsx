@@ -249,7 +249,7 @@ export default function DashboardPage() {
   const [dashboardRawData, setDashboardRawData] = useState<DashboardRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [lastUpdated, setLastUpdated] = useState<string>("15 Agustus 2026 pukul 09.28 WITA");
 
   // Summary states from CSV files
   const [totalPrelistSummary, setTotalPrelistSummary] = useState<number>(0);
@@ -493,14 +493,7 @@ export default function DashboardPage() {
       if (loadedTimestamp) {
         setLastUpdated(loadedTimestamp);
       } else {
-        const now = new Date();
-        setLastUpdated(now.toLocaleDateString("id-ID", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        }) + " WITA");
+        setLastUpdated("15 Agustus 2026 pukul 09.28 WITA");
       }
       
     } catch (err: any) {
@@ -1048,7 +1041,7 @@ export default function DashboardPage() {
                 <span className="text-[10px] sm:text-xs text-orange-200">Terakhir Diperbarui</span>
                 <span className="text-xs sm:text-sm md:text-base font-bold flex items-center gap-1.5 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping flex-shrink-0"></span>
-                  <span className="truncate">{loading ? "Menyinkronkan..." : lastUpdated || "Belum ada data"}</span>
+                  <span className="truncate">{loading && !lastUpdated ? "Menyinkronkan..." : lastUpdated || "15 Agustus 2026 pukul 09.28 WITA"}</span>
                 </span>
               </div>
               <button
