@@ -113,7 +113,7 @@ def calculate_target_info():
     elapsed_days = max(0, elapsed_days)
     
     daily_target = 100.0 / 60.0
-    cumulative_target = elapsed_days * daily_target
+    cumulative_target = min(100.0, elapsed_days * daily_target)
     
     return {
         "daily_target": daily_target,

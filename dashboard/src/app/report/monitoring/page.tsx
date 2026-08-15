@@ -116,7 +116,7 @@ export default function MonitoringPage() {
     elapsedDays = Math.max(0, elapsedDays);
     
     const dailyTarget = 100.0 / 60.0;
-    const cumulativeTarget = elapsedDays * dailyTarget;
+    const cumulativeTarget = Math.min(100.0, elapsedDays * dailyTarget);
     const diff = realisasiPct - cumulativeTarget;
     
     const is100Pct = realisasiPct >= 100;

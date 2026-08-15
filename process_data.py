@@ -627,17 +627,12 @@ def process_data(completed_emails=None, scraped_file="scraped_data.csv", output_
                 shutil.copy2(progres_src, os.path.join(public_dir, "ringkasan_Progres.csv"))
                 print(f"Copied '{progres_src}' to dashboard public folder.")
             
-            # Generate and write timestamp (preserve existing if present)
-            timestamp_file = os.path.join(public_dir, "last_updated.txt")
-            existing_ts = ""
-            if os.path.exists(timestamp_file):
-                try:
-                    with open(timestamp_file, "r", encoding="utf-8") as tf:
-                        existing_ts = tf.read().strip()
-                except Exception:
-                    existing_ts = ""
-            
-            if existing_ts:
+            if timestamp_input:
+                timestamp = parse_timestamp_arg(timestamp_input)
+                with open(timestamp_file, "w", encoding="utf-8") as tf:
+                    tf.write(timestamp)
+                print(f"Wrote timestamp '{timestamp}' to '{timestamp_file}'.")
+            elif existing_ts:
                 timestamp = existing_ts
                 print(f"Preserved existing timestamp '{timestamp}' in '{timestamp_file}'.")
             else:
